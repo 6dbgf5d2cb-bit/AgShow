@@ -17,10 +17,8 @@
     "pages/travellog-detail/travellog-detail",
     "pages/health-detection/health-detection",
     "pages/health-result/health-result",
-    "pages/lunar-test/lunar-test",
     "pages/settings/settings",
     "pages/profile-edit/profile-edit",
-    "pages/index/index",
     "pages/logs/logs"
   ],
   "window": {
