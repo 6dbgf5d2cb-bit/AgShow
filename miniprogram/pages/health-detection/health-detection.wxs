@@ -1,0 +1,11 @@
+function isSymptomSelected(symptoms, id) {
+  if (!symptoms) return false
+  for (var i = 0; i < symptoms.length; i++) {
+    if (symptoms[i] === id) return true
+  }
+  return false
+}
+
+module.exports = {
+  isSymptomSelected: isSymptomSelected
+}

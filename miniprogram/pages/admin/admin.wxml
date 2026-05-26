@@ -1,0 +1,137 @@
+<view class="container">
+  <view class="header">
+    <text class="title">管理后台</text>
+    <view class="admin-avatar">
+      <text>👑</text>
+    </view>
+  </view>
+
+  <view class="stats-section">
+    <view class="stat-card">
+      <text class="stat-value">{{userCount}}</text>
+      <text class="stat-label">用户总数</text>
+    </view>
+    <view class="stat-card">
+      <text class="stat-value">{{adminCount}}</text>
+      <text class="stat-label">管理员</text>
+    </view>
+    <view class="stat-card">
+      <text class="stat-value">{{memberCount}}</text>
+      <text class="stat-label">会员数</text>
+    </view>
+    <view class="stat-card">
+      <text class="stat-value">{{todayActive}}</text>
+      <text class="stat-label">今日活跃</text>
+    </view>
+  </view>
+
+  <view class="menu-section">
+    <view class="section-header">
+      <text class="section-title">用户管理</text>
+    </view>
+    <view class="menu-grid">
+      <view class="menu-item {{selectedMenuItem === 'user-management' ? 'active' : ''}}" bindtap="goToUserManagement">
+        <view class="menu-icon">👥</view>
+        <text class="menu-text">用户列表</text>
+        <text class="menu-desc">管理所有用户</text>
+      </view>
+      <view class="menu-item {{selectedMenuItem === 'role-management' ? 'active' : ''}}" bindtap="goToRoleManagement">
+        <view class="menu-icon">🛡️</view>
+        <text class="menu-text">角色权限</text>
+        <text class="menu-desc">配置角色权限</text>
+      </view>
+      <view class="menu-item {{selectedMenuItem === 'member-level' ? 'active' : ''}}" bindtap="goToMemberLevel">
+        <view class="menu-icon">👑</view>
+        <text class="menu-text">会员等级</text>
+        <text class="menu-desc">管理会员等级</text>
+      </view>
+      <view class="menu-item {{selectedMenuItem === 'role-assignment' ? 'active' : ''}}" bindtap="goToRoleAssignment">
+        <view class="menu-icon">🎭</view>
+        <text class="menu-text">角色分配</text>
+        <text class="menu-desc">批量设置角色</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="menu-section">
+    <view class="section-header">
+      <text class="section-title">内容管理</text>
+    </view>
+    <view class="menu-grid">
+      <view class="menu-item {{selectedMenuItem === 'travel-list' ? 'active' : ''}}" bindtap="goToTravelManagement">
+        <view class="menu-icon">🚗</view>
+        <text class="menu-text">自驾游管理</text>
+        <text class="menu-desc">管理自驾游线路</text>
+      </view>
+      <view class="menu-item {{selectedMenuItem === 'travellog-list' ? 'active' : ''}}" bindtap="goToTravelLogManagement">
+        <view class="menu-icon">📝</view>
+        <text class="menu-text">旅行记管理</text>
+        <text class="menu-desc">管理旅行记内容</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="menu-section">
+    <view class="section-header">
+      <text class="section-title">系统管理</text>
+    </view>
+    <view class="menu-grid">
+      <view class="menu-item {{selectedMenuItem === 'module-management' ? 'active' : ''}}" bindtap="goToModuleManagement">
+        <view class="menu-icon">📦</view>
+        <text class="menu-text">模块管理</text>
+        <text class="menu-desc">管理系统模块</text>
+      </view>
+      <view class="menu-item {{selectedMenuItem === 'home-config' ? 'active' : ''}}" bindtap="goToHomeConfig">
+        <view class="menu-icon">🏠</view>
+        <text class="menu-text">首页配置</text>
+        <text class="menu-desc">配置首页展示</text>
+      </view>
+      <view class="menu-item {{selectedMenuItem === 'logs' ? 'active' : ''}}" bindtap="goToLogs">
+        <view class="menu-icon">📋</view>
+        <text class="menu-text">操作日志</text>
+        <text class="menu-desc">查看系统日志</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="quick-actions">
+    <view class="section-header">
+      <text class="section-title">快捷操作</text>
+    </view>
+    <view class="action-list">
+      <view class="action-item {{selectedActionItem === 'add-points' ? 'active' : ''}}" bindtap="addTestPoints">
+        <text class="action-icon">🎁</text>
+        <text class="action-text">为自己添加积分</text>
+        <text class="action-arrow">→</text>
+      </view>
+      <view class="action-item {{selectedActionItem === 'refresh-cache' ? 'active' : ''}}" bindtap="refreshCache">
+        <text class="action-icon">🔄</text>
+        <text class="action-text">刷新用户列表</text>
+        <text class="action-arrow">→</text>
+      </view>
+      <view class="action-item {{selectedActionItem === 'register-wx' ? 'active' : ''}}" bindtap="registerWeChatUser">
+        <text class="action-icon">💬</text>
+        <text class="action-text">登记微信用户</text>
+        <text class="action-arrow">→</text>
+      </view>
+      <view class="action-item danger {{selectedActionItem === 'clear-data' ? 'active' : ''}}" bindtap="clearTestData">
+        <text class="action-icon">🗑️</text>
+        <text class="action-text">清除测试数据</text>
+        <text class="action-arrow">→</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="footer-space"></view>
+
+  <view class="bottom-bar">
+    <view class="nav-item active">
+      <text class="nav-icon">⚙️</text>
+      <text class="nav-text">管理后台</text>
+    </view>
+    <view class="nav-item" bindtap="goToMember">
+      <text class="nav-icon">👤</text>
+      <text class="nav-text">个人中心</text>
+    </view>
+  </view>
+</view>

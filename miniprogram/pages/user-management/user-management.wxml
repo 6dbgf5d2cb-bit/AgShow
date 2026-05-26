@@ -1,0 +1,239 @@
+<wxs module="utils" src="./user-management.wxs"></wxs>
+<view class="container">
+  <view class="header">
+    <view class="back-btn" bindtap="goBack">
+      <text>←</text>
+    </view>
+    <text class="title">用户管理 ({{totalUserCount}})</text>
+    <text wx:if="{{cloudSyncEnabled}}" class="cloud-badge">云端</text>
+    <view class="header-actions">
+      <view class="action-btn" bindtap="showBatchAddModal">
+        <text>+ 批量添加</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="toolbar">
+    <view class="select-all" bindtap="toggleSelectAll">
+      <view class="checkbox {{allSelected ? 'checked' : ''}}">
+        <text wx:if="{{allSelected}}" class="check-icon">✓</text>
+      </view>
+      <text>全选</text>
+    </view>
+    <view wx:if="{{selectedUsers.length > 0}}" class="batch-actions">
+      <view class="batch-btn danger" bindtap="showDeleteConfirm">
+        <text>删除 ({{selectedUsers.length}})</text>
+      </view>
+      <view class="batch-btn" bindtap="showRoleModal">
+        <text>批量改角色</text>
+      </view>
+      <view class="batch-btn" bindtap="showLevelModal">
+        <text>批量改等级</text>
+      </view>
+    </view>
+    <view wx:else class="filter-wrapper">
+      <view class="filter-item {{filterLevel === '' ? 'active' : ''}}" bindtap="setFilterLevel" data-level="">
+        <text>全部</text>
+      </view>
+      <view wx:for="{{levelOptions}}" wx:key="value" 
+            class="filter-item {{filterLevel === item.value ? 'active' : ''}}"
+            bindtap="setFilterLevel"
+            data-level="{{item.value}}">
+        <text>{{item.label}}</text>
+      </view>
+    </view>
+  </view>
+
+  <scroll-view class="user-list" scroll-y>
+    <view wx:for="{{filteredUsers}}" wx:key="userId" class="user-card">
+      <view class="checkbox-wrapper" bindtap="toggleSelectUser" data-id="{{item.userId}}">
+        <view class="checkbox {{utils.isSelected(selectedUsers, item.userId) ? 'checked' : ''}}">
+          <text wx:if="{{utils.isSelected(selectedUsers, item.userId)}}" class="check-icon">✓</text>
+        </view>
+      </view>
+      <image class="avatar" src="{{item.avatarUrl}}" mode="aspectFill" />
+      <view class="user-info">
+        <view class="user-name-row">
+          <text class="nickname">{{item.nickname}}</text>
+          <view class="level-badge" style="background:{{item.levelColor}}">
+            <text>{{item.levelName}}</text>
+          </view>
+        </view>
+        <text class="username">@{{item.username}}</text>
+        <view class="user-meta">
+          <text class="meta-item">{{item.phone || (item.wechatOpenId ? '微信未绑手机' : '未绑定')}}</text>
+          <text class="meta-divider">|</text>
+          <text class="meta-item">{{item.roleNames}}</text>
+        </view>
+      </view>
+      <view class="user-actions">
+        <view class="action-btn-small" bindtap="showSingleUserRoleModal" data-id="{{item.userId}}" data-name="{{item.nickname}}">
+          <text>授权</text>
+        </view>
+      </view>
+    </view>
+    <view wx:if="{{filteredUsers.length === 0}}" class="empty-state">
+      <text class="empty-icon">👥</text>
+      <text class="empty-text">暂无用户</text>
+      <text wx:if="{{filterLevel}}" class="empty-hint">当前筛选等级下无用户，请点「全部」</text>
+      <text wx:elif="{{!cloudSyncEnabled}}" class="empty-hint">仅本机可见。多手机共享请在 config/api.ts 配置服务端并部署 server</text>
+      <text wx:elif="{{totalUserCount <= 1}}" class="empty-hint">尚无远程用户，请让新用户微信登录后下拉刷新</text>
+    </view>
+
+    <view class="admin-config-section">
+      <view class="section-header">
+        <text class="section-title">系统配置管理</text>
+      </view>
+      <view class="config-grid">
+        <view class="config-item" bindtap="goToRoleManagement">
+          <view class="config-icon">🎭</view>
+          <text class="config-name">角色权限管理</text>
+          <text class="config-desc">配置角色访问权限</text>
+        </view>
+        <view class="config-item" bindtap="goToModuleManagement">
+          <view class="config-icon">📦</view>
+          <text class="config-name">模块管理</text>
+          <text class="config-desc">管理系统模块开关</text>
+        </view>
+        <view class="config-item" bindtap="goToHomeConfig">
+          <view class="config-icon">🏠</view>
+          <text class="config-name">首页配置管理</text>
+          <text class="config-desc">配置首页展示模块</text>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <view wx:if="{{showDeleteModal}}" class="modal-overlay" bindtap="closeDeleteModal">
+    <view class="modal-content" catchtap="noop">
+      <view class="modal-header">
+        <text>确认删除</text>
+      </view>
+      <view class="modal-body">
+        <text>确定要删除选中的 {{selectedUsers.length}} 个用户吗？此操作不可撤销。</text>
+      </view>
+      <view class="modal-footer">
+        <button class="btn-secondary" bindtap="closeDeleteModal">取消</button>
+        <button class="btn-danger" bindtap="confirmDelete">确认删除</button>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{showRoleModal}}" class="modal-overlay" bindtap="closeRoleModal">
+    <view class="modal-content" catchtap="noop">
+      <view class="modal-header">
+        <text>批量修改角色</text>
+        <view class="modal-close" bindtap="closeRoleModal">×</view>
+      </view>
+      <view class="modal-body">
+        <view class="role-options">
+          <view wx:for="{{roleOptions}}" wx:key="value" 
+                class="role-option {{selectedRole === item.value ? 'active' : ''}}"
+                bindtap="selectRole" data-value="{{item.value}}">
+            <text class="role-name">{{item.label}}</text>
+            <view wx:if="{{selectedRole === item.value}}" class="role-check">✓</view>
+          </view>
+        </view>
+        <view class="role-action">
+          <view class="action-option {{roleAction === 'add' ? 'active' : ''}}" bindtap="setRoleAction('add')">
+            <text>添加角色</text>
+          </view>
+          <view class="action-option {{roleAction === 'remove' ? 'active' : ''}}" bindtap="setRoleAction('remove')">
+            <text>移除角色</text>
+          </view>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="btn-secondary" bindtap="closeRoleModal">取消</button>
+        <button class="btn-primary" bindtap="confirmRoleChange">确认修改</button>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{showSingleUserRoleModal}}" class="modal-overlay" bindtap="closeSingleUserRoleModal">
+    <view class="modal-content" catchtap="noop">
+      <view class="modal-header">
+        <text>用户角色授权</text>
+        <view class="modal-close" bindtap="closeSingleUserRoleModal">×</view>
+      </view>
+      <view class="modal-body">
+        <view class="user-info-row">
+          <text class="user-label">用户：</text>
+          <text class="user-name">{{currentUserName}}</text>
+        </view>
+        <view class="role-options">
+          <view wx:for="{{roleOptions}}" wx:key="value" 
+                class="role-option {{utils.includes(currentUserRoles, item.value) ? 'active' : ''}}"
+                bindtap="toggleUserRole" data-role="{{item.value}}">
+            <text class="role-name">{{item.label}}</text>
+            <view wx:if="{{utils.includes(currentUserRoles, item.value)}}" class="role-check">✓</view>
+          </view>
+        </view>
+        <view class="role-hint">
+          <text>至少保留一个角色</text>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="btn-secondary" bindtap="closeSingleUserRoleModal">取消</button>
+        <button class="btn-primary" bindtap="confirmSingleUserRoleChange">确认授权</button>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{showLevelModal}}" class="modal-overlay" bindtap="closeLevelModal">
+    <view class="modal-content" catchtap="noop">
+      <view class="modal-header">
+        <text>批量修改会员等级</text>
+        <view class="modal-close" bindtap="closeLevelModal">×</view>
+      </view>
+      <view class="modal-body">
+        <view wx:for="{{levelOptions}}" wx:key="value" 
+              class="level-option {{selectedLevel === item.value ? 'active' : ''}}"
+              bindtap="selectLevel" data-value="{{item.value}}">
+          <view class="level-color" style="background:{{item.color}}"></view>
+          <text class="level-name">{{item.label}}</text>
+          <view wx:if="{{selectedLevel === item.value}}" class="level-check">✓</view>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="btn-secondary" bindtap="closeLevelModal">取消</button>
+        <button class="btn-primary" bindtap="confirmLevelChange">确认修改</button>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{showBatchAddModal}}" class="modal-overlay" bindtap="closeBatchAddModal">
+    <view class="modal-content large" catchtap="noop">
+      <view class="modal-header">
+        <text>批量添加用户</text>
+        <view class="modal-close" bindtap="closeBatchAddModal">×</view>
+      </view>
+      <view class="modal-body">
+        <view class="batch-add-form">
+          <view class="form-item">
+            <text class="form-label">用户名（每行一个）</text>
+            <textarea 
+              class="form-textarea" 
+              placeholder="请输入用户名，每行一个"
+              value="{{batchUsernames}}"
+              bindinput="onBatchUsernamesInput"
+            />
+          </view>
+          <view class="form-item">
+            <text class="form-label">手机号（可选，每行一个，与用户名对应）</text>
+            <textarea 
+              class="form-textarea" 
+              placeholder="请输入手机号，每行一个"
+              value="{{batchPhones}}"
+              bindinput="onBatchPhonesInput"
+            />
+          </view>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="btn-secondary" bindtap="closeBatchAddModal">取消</button>
+        <button class="btn-primary" bindtap="confirmBatchAdd">确认添加</button>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,115 @@
+import { getActiveRoutes, DifficultyConfig, canPublishRoute } from '../../utils/travel'
+import { getCurrentSession } from '../../utils/user'
+
+Page({
+  data: {
+    routes: [] as any[],
+    filteredRoutes: [] as any[],
+    activeDifficulty: '',
+    isRefreshing: false,
+    canPublish: false
+  },
+
+  onLoad() {
+    this.loadRoutes()
+    this.checkPublishPermission()
+  },
+
+  onShow() {
+    this.loadRoutes()
+    this.checkPublishPermission()
+  },
+
+  loadRoutes() {
+    const routes = getActiveRoutes()
+    this.setData({
+      routes,
+      filteredRoutes: routes
+    })
+  },
+
+  checkPublishPermission() {
+    const session = getCurrentSession()
+    if (session) {
+      const result = canPublishRoute(session.userId)
+      this.setData({ canPublish: result.canPublish })
+    } else {
+      this.setData({ canPublish: false })
+    }
+  },
+
+  filterByDifficulty(difficulty: string) {
+    this.setData({ activeDifficulty: difficulty })
+    
+    const { routes } = this.data
+    if (!difficulty) {
+      this.setData({ filteredRoutes: routes })
+      return
+    }
+    
+    const filtered = routes.filter(r => r.difficulty === difficulty)
+    this.setData({ filteredRoutes: filtered })
+  },
+
+  onRefresh() {
+    this.setData({ isRefreshing: true })
+    
+    setTimeout(() => {
+      this.loadRoutes()
+      this.setData({ isRefreshing: false })
+    }, 500)
+  },
+
+  getDifficultyName(difficulty: string): string {
+    return DifficultyConfig[difficulty as keyof typeof DifficultyConfig]?.name || difficulty
+  },
+
+  getDifficultyColor(difficulty: string): string {
+    return DifficultyConfig[difficulty as keyof typeof DifficultyConfig]?.color || '#999'
+  },
+
+  goToDetail(e: any) {
+    const routeId = e.currentTarget.dataset.id
+    wx.navigateTo({
+      url: `/pages/travel-detail/travel-detail?id=${routeId}`
+    })
+  },
+
+  goToPublish() {
+    const session = getCurrentSession()
+    if (!session) {
+      wx.showToast({
+        title: '请先登录',
+        icon: 'none'
+      })
+      wx.navigateTo({ url: '/pages/login/login' })
+      return
+    }
+
+    const result = canPublishRoute(session.userId)
+    if (!result.canPublish) {
+      wx.showModal({
+        title: '权限不足',
+        content: result.message + '，是否前往升级会员？',
+        confirmText: '去升级',
+        success: (res) => {
+          if (res.confirm) {
+            wx.showToast({
+              title: '请联系管理员升级',
+              icon: 'none'
+            })
+          }
+        }
+      })
+      return
+    }
+
+    wx.navigateTo({
+      url: '/pages/travel-publish/travel-publish'
+    })
+  },
+
+  goBack() {
+    wx.navigateBack()
+  }
+})

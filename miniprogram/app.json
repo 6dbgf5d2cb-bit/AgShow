@@ -1,0 +1,34 @@
+{
+  "pages": [
+    "pages/login/login",
+    "pages/register/register",
+    "pages/member/member",
+    "pages/admin/admin",
+    "pages/user-management/user-management",
+    "pages/role-management/role-management",
+    "pages/member-level/member-level",
+    "pages/module-management/module-management",
+    "pages/home-config/home-config",
+    "pages/travel-list/travel-list",
+    "pages/travel-publish/travel-publish",
+    "pages/travel-detail/travel-detail",
+    "pages/travellog-list/travellog-list",
+    "pages/travellog-publish/travellog-publish",
+    "pages/travellog-detail/travellog-detail",
+    "pages/health-detection/health-detection",
+    "pages/health-result/health-result",
+    "pages/lunar-test/lunar-test",
+    "pages/settings/settings",
+    "pages/profile-edit/profile-edit",
+    "pages/index/index",
+    "pages/logs/logs"
+  ],
+  "window": {
+    "navigationBarTextStyle": "black",
+    "navigationStyle": "custom"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents",
+  "__usePrivacyCheck__": true
+}

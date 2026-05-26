@@ -1,0 +1,187 @@
+<view class="container">
+  <view class="header">
+    <view class="back-btn" bindtap="goBack">
+      <text>←</text>
+    </view>
+    <text class="title">线路详情</text>
+    <view class="placeholder"></view>
+  </view>
+
+  <scroll-view class="detail-scroll" scroll-y>
+    <view class="cover-section">
+      <image
+        wx:if="{{route.coverImage}}"
+        class="cover-image"
+        src="{{route.coverImage}}"
+        mode="aspectFill"
+        bindtap="previewImage"
+        data-url="{{route.coverImage}}"
+      />
+      <view wx:else class="cover-placeholder">
+        <text>🚗</text>
+      </view>
+      <view class="difficulty-badge" style="background: {{difficultyColor}}">
+        <text>{{difficultyName}}</text>
+      </view>
+    </view>
+
+    <view class="main-section">
+      <text class="route-title">{{route.title}}</text>
+      
+      <view wx:if="{{isPublisher || isAdmin}}" class="content-actions">
+        <view class="action-btn edit" bindtap="editRoute">
+          <text>编辑</text>
+        </view>
+        <view class="action-btn delete" bindtap="deleteRoute">
+          <text>删除</text>
+        </view>
+      </view>
+      
+      <view class="meta-bar">
+        <view class="meta-item">
+          <text class="meta-icon">📍</text>
+          <text>{{route.distance}}km</text>
+        </view>
+        <view class="meta-item">
+          <text class="meta-icon">⏱️</text>
+          <text>{{route.duration}}小时</text>
+        </view>
+        <view class="meta-item">
+          <text class="meta-icon">👁️</text>
+          <text>{{route.viewCount}}</text>
+        </view>
+      </view>
+
+      <view class="tags-bar">
+        <text wx:for="{{route.tags}}" wx:key="*this" class="tag">{{item}}</text>
+      </view>
+
+      <view wx:if="{{galleryImages.length > 0}}" class="section-card">
+        <text class="section-title">线路相册（{{galleryImages.length}}张）</text>
+        <view class="image-grid">
+          <image
+            wx:for="{{galleryImages}}"
+            wx:key="*this"
+            class="route-gallery-image"
+            src="{{item}}"
+            mode="aspectFill"
+            bindtap="previewImage"
+            data-url="{{item}}"
+          />
+        </view>
+      </view>
+
+      <view class="section-card">
+        <text class="section-title">线路描述</text>
+        <text class="section-content">{{route.description}}</text>
+      </view>
+
+      <view class="section-card">
+        <text class="section-title">行程路线</text>
+        <view class="route-path-item">
+          <view class="path-dot start"></view>
+          <view class="path-line"></view>
+          <text class="path-text">起点：{{route.startPoint}}</text>
+        </view>
+        <view wx:for="{{route.waypoints}}" wx:key="*this" class="route-path-item">
+          <view class="path-dot waypoint"></view>
+          <view class="path-line"></view>
+          <text class="path-text">途经：{{item}}</text>
+        </view>
+        <view class="route-path-item">
+          <view class="path-dot end"></view>
+          <text class="path-text">终点：{{route.endPoint}}</text>
+        </view>
+      </view>
+
+      <view wx:if="{{route.bestSeason && route.bestSeason.length > 0}}" class="section-card">
+        <text class="section-title">最佳季节</text>
+        <view class="season-list">
+          <text wx:for="{{route.bestSeason}}" wx:key="*this" class="season-tag">{{getSeasonName(item)}}</text>
+        </view>
+      </view>
+
+      <view wx:if="{{route.tips}}" class="section-card">
+        <text class="section-title">旅行贴士</text>
+        <text class="section-content">{{route.tips}}</text>
+      </view>
+
+      <view class="section-card publisher-card">
+        <text class="section-title">发布者信息</text>
+        <view class="publisher-info" bindtap="viewPublisherProfile">
+          <image class="publisher-avatar" src="{{publisherInfo.avatarUrl}}" mode="aspectFill" />
+          <view class="publisher-detail">
+            <view class="publisher-name-row">
+              <text class="publisher-name">{{publisherInfo.nickname}}</text>
+              <view class="level-badge" style="background: {{publisherLevelColor}}">
+                <text>{{publisherLevelName}}</text>
+              </view>
+            </view>
+            <text class="publish-time">发布于 {{publishTime}}</text>
+          </view>
+        </view>
+
+        <view class="phone-section">
+          <view wx:if="{{canViewPhone}}" class="phone-visible" bindtap="makePhoneCall">
+            <text class="phone-icon">📞</text>
+            <text class="phone-number">{{publisherInfo.phone}}</text>
+            <text class="phone-hint">点击拨打</text>
+          </view>
+          <view wx:else class="phone-hidden">
+            <text class="phone-icon locked">🔒</text>
+            <view class="phone-upgrade">
+              <text class="upgrade-text">金牌会员及以上可查看电话</text>
+              <text class="upgrade-btn" bindtap="showUpgradeTip">立即升级</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view wx:if="{{route.maxParticipants}}" class="section-card">
+        <text class="section-title">参与人数</text>
+        <view class="participant-count">
+          <text class="count-number">{{participantCount}}</text>
+          <text class="count-divider">/</text>
+          <text class="count-total">{{route.maxParticipants}}人</text>
+        </view>
+      </view>
+
+      <view wx:if="{{participants.length > 0}}" class="section-card">
+        <text class="section-title">报名人员</text>
+        <view class="participant-list">
+          <view wx:for="{{participants}}" wx:key="userId" class="participant-item">
+            <image class="participant-avatar" src="{{item.avatarUrl}}" mode="aspectFill" />
+            <view class="participant-info">
+              <view class="participant-name-row">
+                <text class="participant-name">{{item.userName}}</text>
+                <view class="level-badge small" style="background: {{getLevelColor(item.memberLevel)}}">
+                  <text>{{getLevelName(item.memberLevel)}}</text>
+                </view>
+              </view>
+              <text class="participant-time">{{formatSignUpTime(item.signUpTime)}}</text>
+            </view>
+            <view wx:if="{{isPublisher || isAdmin}}" class="participant-phone" bindtap="callParticipant" data-phone="{{item.phone}}">
+              <text class="phone-icon">📞</text>
+              <text class="phone-text">{{item.phone}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <view class="bottom-action">
+    <view class="participant-info-bar">
+      <text class="participant-text">已报名 {{participantCount}}/{{route.maxParticipants}}</text>
+    </view>
+    <button wx:if="{{!isSignedUp && hasSession}}" class="sign-up-btn" bindtap="signUp" disabled="{{isFull}}">
+      <text>{{isFull ? '已满员' : '立即报名'}}</text>
+    </button>
+    <view wx:elif="{{isSignedUp}}" class="signed-badge">
+      <text>✓ 已报名</text>
+    </view>
+    <view wx:else class="login-hint">
+      <text>请登录后报名</text>
+    </view>
+  </view>
+</view>

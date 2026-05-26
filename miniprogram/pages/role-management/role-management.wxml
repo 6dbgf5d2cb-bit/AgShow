@@ -1,0 +1,169 @@
+<wxs module="utils" src="./role-management.wxs"></wxs>
+<view class="container">
+  <view class="header">
+    <view class="back-btn" bindtap="goBack">
+      <text>←</text>
+    </view>
+    <view class="header-center">
+      <text class="title">角色权限管理</text>
+      <view class="action-btn" bindtap="showAddRoleModal">
+        <text>+ 添加角色</text>
+      </view>
+    </view>
+    <view class="placeholder"></view>
+  </view>
+
+  <view class="role-section">
+    <view class="section-header">
+      <text class="section-title">角色列表</text>
+      <view wx:if="{{selectedRoles.length > 0}}" class="batch-actions">
+        <text class="selected-count">已选 {{selectedRoles.length}} 个</text>
+        <view class="batch-btn danger" bindtap="showDeleteConfirm">
+          <text>批量删除</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="role-list">
+      <view 
+        wx:for="{{roles}}" 
+        wx:key="role"
+        class="role-card {{activeRole === item.role ? 'active' : ''}}"
+        bindtap="selectRole"
+        data-role="{{item.role}}"
+      >
+        <view class="checkbox-wrapper" catchtap="toggleSelectRole" data-role="{{item.role}}">
+          <view class="checkbox {{utils.isSelected(selectedRoles, item.role) ? 'checked' : ''}}">
+            <text wx:if="{{utils.isSelected(selectedRoles, item.role)}}" class="check-icon">✓</text>
+          </view>
+        </view>
+        <view class="role-info">
+          <text class="role-name">{{item.name}}</text>
+          <text class="role-key">{{item.role}}</text>
+        </view>
+        <view class="role-actions">
+          <view class="action-icon" catchtap="editRole" data-role="{{item.role}}">✏️</view>
+          <view wx:if="{{item.role !== 'admin'}}" class="action-icon delete" catchtap="deleteSingleRole" data-role="{{item.role}}">🗑️</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="permission-section">
+    <view class="section-header">
+      <text class="section-title">权限配置</text>
+      <text class="section-hint">当前角色：{{getActiveRoleName()}}</text>
+    </view>
+
+    <scroll-view class="permission-scroll" scroll-y>
+      <view wx:for="{{modules}}" wx:key="id" class="module-card">
+        <view class="module-header">
+          <text class="module-icon">{{item.icon}}</text>
+          <text class="module-name">{{item.name}}</text>
+        </view>
+        <view class="permission-grid">
+          <view 
+            class="permission-item {{utils.getPermissionStatus(permissions, activeRole, item.id, 'view') ? 'active' : ''}}"
+            bindtap="togglePermission"
+            data-module="{{item.id}}"
+            data-action="view"
+          >
+            <text class="permission-icon">👁️</text>
+            <text class="permission-label">查看</text>
+          </view>
+          <view 
+            class="permission-item {{utils.getPermissionStatus(permissions, activeRole, item.id, 'create') ? 'active' : ''}}"
+            bindtap="togglePermission"
+            data-module="{{item.id}}"
+            data-action="create"
+          >
+            <text class="permission-icon">➕</text>
+            <text class="permission-label">新增</text>
+          </view>
+          <view 
+            class="permission-item {{utils.getPermissionStatus(permissions, activeRole, item.id, 'edit') ? 'active' : ''}}"
+            bindtap="togglePermission"
+            data-module="{{item.id}}"
+            data-action="edit"
+          >
+            <text class="permission-icon">✏️</text>
+            <text class="permission-label">编辑</text>
+          </view>
+          <view 
+            class="permission-item {{utils.getPermissionStatus(permissions, activeRole, item.id, 'delete') ? 'active' : ''}}"
+            bindtap="togglePermission"
+            data-module="{{item.id}}"
+            data-action="delete"
+          >
+            <text class="permission-icon">🗑️</text>
+            <text class="permission-label">删除</text>
+          </view>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <view class="footer-bar">
+    <button class="btn-primary" bindtap="savePermissions">保存修改</button>
+  </view>
+
+  <view wx:if="{{showAddRoleModal}}" class="modal-overlay" bindtap="closeAddRoleModal">
+    <view class="modal-content" catchtap="noop">
+      <view class="modal-header">
+        <text>{{editingRole ? '编辑角色' : '添加角色'}}</text>
+        <view class="modal-close" bindtap="closeAddRoleModal">×</view>
+      </view>
+      <view class="modal-body">
+        <view class="form-item">
+          <text class="form-label">角色标识</text>
+          <input 
+            class="form-input" 
+            placeholder="请输入角色标识（如：editor）"
+            value="{{newRoleKey}}"
+            bindinput="onRoleKeyInput"
+            disabled="{{!!editingRole}}"
+          />
+        </view>
+        <view class="form-item">
+          <text class="form-label">角色名称</text>
+          <input 
+            class="form-input" 
+            placeholder="请输入角色名称"
+            value="{{newRoleName}}"
+            bindinput="onRoleNameInput"
+          />
+        </view>
+        <view class="form-item">
+          <text class="form-label">权限列表</text>
+          <view class="permission-checkboxes">
+            <view wx:for="{{allPermissions}}" wx:key="item" 
+                  class="permission-checkbox {{utils.isSelected(selectedPermissions, item) ? 'active' : ''}}"
+                  bindtap="togglePermissionItem"
+                  data-permission="{{item}}">
+              <text>{{item}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="modal-footer">
+        <button class="btn-secondary" bindtap="closeAddRoleModal">取消</button>
+        <button class="btn-primary" bindtap="saveRole">保存</button>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{showDeleteModal}}" class="modal-overlay" bindtap="closeDeleteModal">
+    <view class="modal-content" catchtap="noop">
+      <view class="modal-header">
+        <text>确认删除</text>
+      </view>
+      <view class="modal-body">
+        <text>确定要删除选中的 {{selectedRoles.length}} 个角色吗？此操作不可撤销。</text>
+      </view>
+      <view class="modal-footer">
+        <button class="btn-secondary" bindtap="closeDeleteModal">取消</button>
+        <button class="btn-danger" bindtap="confirmDelete">确认删除</button>
+      </view>
+    </view>
+  </view>
+</view>

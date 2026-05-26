@@ -1,0 +1,553 @@
+page {
+  height: 100%;
+  background: #f5f5f5;
+}
+
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 32rpx;
+  padding-top: calc(env(safe-area-inset-top) + 24rpx);
+  background: #fff;
+}
+
+.back-btn {
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40rpx;
+  color: #333;
+}
+
+.title {
+  font-size: 34rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.cloud-badge {
+  margin-left: 12rpx;
+  padding: 4rpx 12rpx;
+  font-size: 20rpx;
+  color: #667eea;
+  background: #eef0ff;
+  border-radius: 8rpx;
+}
+
+.header-actions {
+  width: 160rpx;
+}
+
+.action-btn {
+  font-size: 26rpx;
+  color: #667eea;
+  text-align: right;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 32rpx;
+  background: #fff;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.select-all {
+  display: flex;
+  align-items: center;
+  margin-right: 24rpx;
+  font-size: 26rpx;
+  color: #666;
+}
+
+.checkbox {
+  width: 40rpx;
+  height: 40rpx;
+  border: 2rpx solid #ddd;
+  border-radius: 8rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12rpx;
+}
+
+.checkbox.checked {
+  background: #667eea;
+  border-color: #667eea;
+}
+
+.check-icon {
+  color: #fff;
+  font-size: 24rpx;
+}
+
+.batch-actions {
+  display: flex;
+  gap: 16rpx;
+  flex: 1;
+}
+
+.batch-btn {
+  padding: 12rpx 20rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  background: #f0f0f0;
+  color: #666;
+}
+
+.batch-btn.danger {
+  background: rgba(255, 77, 79, 0.1);
+  color: #ff4d4f;
+}
+
+.filter-wrapper {
+  display: flex;
+  gap: 16rpx;
+  flex: 1;
+}
+
+.filter-item {
+  padding: 12rpx 24rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  background: #f0f0f0;
+  color: #666;
+}
+
+.filter-item.active {
+  background: #667eea;
+  color: #fff;
+}
+
+.user-list {
+  flex: 1;
+  height: 0;
+  padding: 24rpx;
+  box-sizing: border-box;
+}
+
+.user-card {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+}
+
+.checkbox-wrapper {
+  margin-right: 20rpx;
+}
+
+.avatar {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 50%;
+  margin-right: 20rpx;
+}
+
+.user-info {
+  flex: 1;
+}
+
+.user-name-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 8rpx;
+}
+
+.nickname {
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.level-badge {
+  padding: 4rpx 12rpx;
+  border-radius: 12rpx;
+  font-size: 20rpx;
+  color: #fff;
+}
+
+.username {
+  font-size: 24rpx;
+  color: #999;
+  margin-bottom: 8rpx;
+}
+
+.user-meta {
+  display: flex;
+  align-items: center;
+}
+
+.meta-item {
+  font-size: 22rpx;
+  color: #666;
+}
+
+.meta-divider {
+  margin: 0 8rpx;
+  color: #ddd;
+}
+
+.user-status {
+  margin-left: 20rpx;
+}
+
+.status-badge {
+  font-size: 22rpx;
+  padding: 6rpx 16rpx;
+  background: rgba(82, 196, 26, 0.1);
+  border-radius: 12rpx;
+}
+
+.user-actions {
+  margin-left: 16rpx;
+}
+
+.action-btn-small {
+  padding: 12rpx 24rpx;
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 20rpx;
+}
+
+.action-btn-small text {
+  font-size: 24rpx;
+  color: #667eea;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120rpx 0;
+}
+
+.empty-icon {
+  font-size: 100rpx;
+  margin-bottom: 24rpx;
+}
+
+.empty-text {
+  font-size: 28rpx;
+  color: #999;
+}
+
+.empty-hint {
+  display: block;
+  margin-top: 16rpx;
+  padding: 0 48rpx;
+  font-size: 24rpx;
+  color: #bbb;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.admin-config-section {
+  padding: 24rpx;
+}
+
+.section-header {
+  margin-bottom: 20rpx;
+}
+
+.section-title {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.config-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.config-item {
+  display: flex;
+  align-items: center;
+  padding: 24rpx;
+  background: #fff;
+  border-radius: 16rpx;
+}
+
+.config-icon {
+  width: 80rpx;
+  height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48rpx;
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 16rpx;
+  margin-right: 20rpx;
+}
+
+.config-name {
+  flex: 1;
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.config-desc {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  width: 600rpx;
+  background: #fff;
+  border-radius: 24rpx;
+  overflow: hidden;
+}
+
+.modal-content.large {
+  width: 680rpx;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+  font-size: 32rpx;
+  font-weight: bold;
+}
+
+.modal-close {
+  width: 48rpx;
+  height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40rpx;
+  color: #999;
+}
+
+.modal-body {
+  padding: 32rpx;
+}
+
+.modal-body text {
+  font-size: 28rpx;
+  color: #666;
+  line-height: 1.6;
+}
+
+.user-info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24rpx;
+  padding: 16rpx;
+  background: #f5f5f5;
+  border-radius: 12rpx;
+}
+
+.user-label {
+  font-size: 26rpx;
+  color: #999;
+}
+
+.user-name {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.role-hint {
+  margin-top: 16rpx;
+  padding: 12rpx;
+  background: rgba(250, 173, 20, 0.1);
+  border-radius: 8rpx;
+}
+
+.role-hint text {
+  font-size: 24rpx;
+  color: #faad14;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 24rpx;
+  padding: 24rpx 32rpx 32rpx;
+}
+
+.btn-secondary {
+  flex: 1;
+  height: 88rpx;
+  background: #f5f5f5;
+  border-radius: 44rpx;
+  border: none;
+  font-size: 30rpx;
+  color: #666;
+}
+
+.btn-primary {
+  flex: 1;
+  height: 88rpx;
+  background: #667eea;
+  border-radius: 44rpx;
+  border: none;
+  font-size: 30rpx;
+  color: #fff;
+}
+
+.btn-danger {
+  flex: 1;
+  height: 88rpx;
+  background: #ff4d4f;
+  border-radius: 44rpx;
+  border: none;
+  font-size: 30rpx;
+  color: #fff;
+}
+
+.role-options {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.role-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24rpx;
+  border-radius: 12rpx;
+  border: 2rpx solid #e0e0e0;
+}
+
+.role-option.active {
+  border-color: #667eea;
+  background: rgba(102, 126, 234, 0.1);
+}
+
+.role-name {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.role-check {
+  width: 40rpx;
+  height: 40rpx;
+  background: #667eea;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.role-action {
+  display: flex;
+  gap: 24rpx;
+  margin-top: 24rpx;
+}
+
+.action-option {
+  flex: 1;
+  padding: 20rpx;
+  text-align: center;
+  border-radius: 12rpx;
+  border: 2rpx solid #e0e0e0;
+  font-size: 26rpx;
+  color: #666;
+}
+
+.action-option.active {
+  border-color: #667eea;
+  background: rgba(102, 126, 234, 0.1);
+  color: #667eea;
+}
+
+.level-option {
+  display: flex;
+  align-items: center;
+  padding: 24rpx;
+  border-radius: 12rpx;
+  border: 2rpx solid #e0e0e0;
+  margin-bottom: 16rpx;
+}
+
+.level-option.active {
+  border-color: #667eea;
+  background: rgba(102, 126, 234, 0.1);
+}
+
+.level-color {
+  width: 24rpx;
+  height: 24rpx;
+  border-radius: 50%;
+  margin-right: 16rpx;
+}
+
+.level-name {
+  flex: 1;
+  font-size: 28rpx;
+  color: #333;
+}
+
+.level-check {
+  width: 40rpx;
+  height: 40rpx;
+  background: #667eea;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.batch-add-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.form-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-label {
+  font-size: 26rpx;
+  color: #666;
+  margin-bottom: 12rpx;
+}
+
+.form-textarea {
+  width: 100%;
+  height: 160rpx;
+  padding: 20rpx;
+  border: 2rpx solid #e0e0e0;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+}

@@ -1,0 +1,86 @@
+<view class="container">
+  <view class="header">
+    <text class="title">旅行记</text>
+  </view>
+
+  <view class="action-bar">
+    <view class="action-left">
+      <view wx:if="{{isSelectMode}}" class="select-all" bindtap="toggleSelectAll">
+        <view class="checkbox {{selectAll ? 'checked' : ''}}">
+          <text wx:if="{{selectAll}}" class="check-icon">✓</text>
+        </view>
+        <text>全选</text>
+      </view>
+    </view>
+    
+    <view class="action-center">
+      <text wx:if="{{isAdmin && !isSelectMode}}" class="manage-btn" bindtap="enterSelectMode">管理</text>
+      <text wx:if="{{isSelectMode}}" class="manage-btn exit-btn" bindtap="cancelSelectMode">退出</text>
+    </view>
+    
+    <view class="action-right">
+      <view wx:if="{{isSelectMode}}" class="batch-actions">
+        <button class="batch-btn cancel-btn" bindtap="cancelSelectMode">取消</button>
+        <button class="batch-btn delete-btn" bindtap="batchDelete">删除({{selectedCount}})</button>
+      </view>
+    </view>
+  </view>
+
+  <scroll-view scroll-y class="log-list">
+    <view wx:if="{{logs.length === 0}}" class="empty-state">
+      <text class="empty-icon">📝</text>
+      <text class="empty-text">暂无旅行记</text>
+    </view>
+    
+    <view wx:for="{{logs}}" wx:key="logId" class="log-card {{item.selected ? 'selected' : ''}}" bindtap="goToDetail" data-logid="{{item.logId}}">
+      <view wx:if="{{isSelectMode}}" class="select-box" catchtap="toggleSelect" data-logid="{{item.logId}}">
+        <view class="checkbox {{item.selected ? 'checked' : ''}}">
+          <text wx:if="{{item.selected}}" class="check-icon">✓</text>
+        </view>
+      </view>
+      
+      <view class="log-cover">
+        <image wx:if="{{item.images && item.images.length > 0}}" src="{{item.images[0]}}" mode="aspectFill" />
+        <view wx:else class="no-image">
+          <text class="no-image-icon">🖼️</text>
+        </view>
+      </view>
+      
+      <view class="log-content">
+        <text class="log-title">{{item.title}}</text>
+        <text class="log-desc">{{item.content}}</text>
+        
+        <view class="log-meta">
+          <view class="publisher-info">
+            <image wx:if="{{item.publisherInfo.avatarUrl}}" src="{{item.publisherInfo.avatarUrl}}" class="publisher-avatar" />
+            <text wx:else class="publisher-placeholder">👤</text>
+            <text class="publisher-name">{{item.publisherInfo.nickname}}</text>
+            <text class="publisher-level" style="color: {{item.publisherLevelColor}}">{{item.publisherLevelName}}</text>
+          </view>
+          
+          <view class="log-stats">
+            <text class="stat-item">👁️ {{item.viewCount}}</text>
+            <text class="stat-item">❤️ {{item.likeCount}}</text>
+            <text class="stat-item">💬 {{item.commentCount}}</text>
+          </view>
+        </view>
+        
+        <view class="log-footer">
+          <text wx:if="{{item.location}}" class="log-location">📍 {{item.location}}</text>
+          <view class="log-tags">
+            <text wx:for="{{item.tags}}" wx:key="*this" class="tag">{{item}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="bottom-spacing"></view>
+  </scroll-view>
+
+  <view class="bottom-action-bar">
+    <button wx:if="{{hasSession && canPublish && !isSelectMode}}" class="publish-btn" bindtap="goToPublish">
+      <text>发布旅行记</text>
+    </button>
+    <text wx:else-if="!canPublish && hasSession" class="publish-tip">{{publishMessage}}</text>
+  </view>
+</view>

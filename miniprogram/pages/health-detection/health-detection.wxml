@@ -1,0 +1,162 @@
+<wxs module="utils" src="./health-detection.wxs"></wxs>
+
+<view class="container">
+  <view class="header">
+    <view class="back-btn" bindtap="goBack">
+      <text>←</text>
+    </view>
+    <text class="title">健康检测</text>
+  </view>
+
+  <view class="main-content">
+    <view class="tab-bar">
+      <view 
+        class="tab-item {{activeTab === 'bazi' ? 'active' : ''}}" 
+        bindtap="switchTab" 
+        data-tab="bazi"
+      >
+        <text class="tab-icon">📿</text>
+        <text class="tab-text">八字排盘</text>
+      </view>
+      <view 
+        class="tab-item {{activeTab === 'symptom' ? 'active' : ''}}" 
+        bindtap="switchTab" 
+        data-tab="symptom"
+      >
+        <text class="tab-icon">🌿</text>
+        <text class="tab-text">中医诊断</text>
+      </view>
+    </view>
+
+    <view wx:if="{{activeTab === 'bazi'}}" class="form-section">
+      <view class="section-title">
+        <text class="icon">🔮</text>
+        <text>八字命理分析</text>
+      </view>
+
+      <view class="form-group">
+        <text class="form-label required">姓名</text>
+        <input 
+          class="form-input" 
+          placeholder="请输入您的姓名"
+          value="{{baziForm.name}}"
+          bindinput="onBaziInputChange"
+          data-field="name"
+        />
+      </view>
+
+      <view class="form-group">
+        <text class="form-label required">性别</text>
+        <view class="gender-options">
+          <view 
+            class="gender-option {{baziForm.gender === 'male' ? 'active' : ''}}"
+            bindtap="selectGender"
+            data-value="male"
+          >
+            <text>男</text>
+          </view>
+          <view 
+            class="gender-option {{baziForm.gender === 'female' ? 'active' : ''}}"
+            bindtap="selectGender"
+            data-value="female"
+          >
+            <text>女</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="form-group">
+        <text class="form-label required">日期类型</text>
+        <view class="calendar-options">
+          <view 
+            class="calendar-option {{baziForm.calendarType === 'solar' ? 'active' : ''}}"
+            bindtap="selectCalendarType"
+            data-value="solar"
+          >
+            <text>阳历</text>
+          </view>
+          <view 
+            class="calendar-option {{baziForm.calendarType === 'lunar' ? 'active' : ''}}"
+            bindtap="selectCalendarType"
+            data-value="lunar"
+          >
+            <text>农历</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="form-group">
+        <text class="form-label required">出生日期</text>
+        <picker mode="date" value="{{baziForm.birthDate}}" bindchange="onBirthDateChange">
+          <view class="picker-input">
+            <text>{{baziForm.birthDate || '请选择出生日期'}}</text>
+            <text class="picker-arrow">›</text>
+          </view>
+        </picker>
+        <text class="date-hint">子平排盘：年柱以立春为界，月柱以节气为界（《渊海子平》）</text>
+      </view>
+
+      <view class="form-group">
+        <text class="form-label required">出生时间</text>
+        <picker mode="selector" range="{{timeSlots}}" range-key="label" bindchange="onBirthTimeChange">
+          <view class="picker-input">
+            <text>{{baziForm.birthTimeLabel || '请选择出生时间'}}</text>
+            <text class="picker-arrow">›</text>
+          </view>
+        </picker>
+      </view>
+
+      <button class="btn-primary" bindtap="submitBazi">
+        <text>开始排盘</text>
+      </button>
+    </view>
+
+    <view wx:if="{{activeTab === 'symptom'}}" class="form-section symptom-section">
+      <view class="section-title">
+        <text class="icon">🏥</text>
+        <text>中医症状诊断</text>
+      </view>
+      <text class="symptom-hint">按人体部位勾选症状，将依《黄帝内经》《难经》《伤寒杂病论》《神农本草经》合参分析</text>
+      <view class="selected-count">已选 {{selectedCount}} 项</view>
+
+      <scroll-view class="symptom-categories-scroll" scroll-x enable-flex>
+        <view class="symptom-categories">
+          <view
+            wx:for="{{symptomCategories}}"
+            wx:key="id"
+            class="category-item {{selectedCategory === item.id ? 'active' : ''}}"
+            bindtap="selectCategory"
+            data-category="{{item.id}}"
+          >
+            <text class="cat-icon">{{item.icon}}</text>
+            <text class="cat-name">{{item.name}}</text>
+          </view>
+        </view>
+      </scroll-view>
+
+      <view class="symptom-list">
+        <view 
+          wx:for="{{currentSymptoms}}" 
+          wx:key="id"
+          class="symptom-item {{utils.isSymptomSelected(selectedSymptoms, item.id) ? 'active' : ''}}"
+          bindtap="toggleSymptom"
+          data-id="{{item.id}}"
+        >
+          <view class="symptom-info">
+            <text class="symptom-name">{{item.name}}</text>
+            <text class="symptom-desc">{{item.description}}</text>
+          </view>
+          <view class="symptom-check">
+            <view class="check-box">
+              <text wx:if="{{utils.isSymptomSelected(selectedSymptoms, item.id)}}">✓</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <button class="btn-primary" bindtap="submitSymptom">
+        <text>开始诊断</text>
+      </button>
+    </view>
+  </view>
+</view>

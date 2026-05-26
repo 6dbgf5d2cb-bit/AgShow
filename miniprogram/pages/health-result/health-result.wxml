@@ -1,0 +1,439 @@
+<view class="container">
+  <view class="header">
+    <view class="back-btn" bindtap="goBack">
+      <text>←</text>
+    </view>
+    <text class="title">{{resultType === 'bazi' ? '八字排盘' : '中医诊断'}}</text>
+    <view class="placeholder"></view>
+  </view>
+
+  <scroll-view class="content" scroll-y>
+    <view wx:if="{{resultType === 'bazi'}}" class="result-section">
+      <view class="card date-card">
+        <view class="card-header">
+          <text class="card-title">📅 排盘信息</text>
+        </view>
+        <view class="date-info">
+          <view class="info-row">
+            <text class="info-label">输入日期</text>
+            <text class="info-value">{{baziResult.originalDate}}</text>
+          </view>
+          <view class="info-row">
+            <text class="info-label">输入历法</text>
+            <text class="info-value">{{baziResult.originalCalendarType === 'lunar' ? '农历' : '阳历'}}</text>
+          </view>
+          <view class="info-row">
+            <text class="info-label">转换后农历</text>
+            <text class="info-value">{{baziResult.lunarDate}}</text>
+          </view>
+          <view class="info-row">
+            <text class="info-label">转换后阳历</text>
+            <text class="info-value">{{baziResult.solarDate}}</text>
+          </view>
+          <view wx:if="{{baziResult.pillarMethod}}" class="info-row">
+            <text class="info-label">排盘依据</text>
+            <text class="info-value info-value-block">{{baziResult.pillarMethod}}</text>
+          </view>
+          <view wx:if="{{baziResult.qiYunDesc}}" class="info-row">
+            <text class="info-label">起运交运</text>
+            <text class="info-value info-value-block">{{baziResult.qiYunDesc}}</text>
+          </view>
+          <view wx:if="{{baziResult.ziShiNote}}" class="info-row">
+            <text class="info-label">子时说明</text>
+            <text class="info-value info-value-block">{{baziResult.ziShiNote}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view wx:if="{{baziResult.naYin}}" class="card">
+        <view class="card-header">
+          <text class="card-title">🔔 四柱纳音（渊海子平）</text>
+        </view>
+        <view class="info-list">
+          <view class="info-row">
+            <text class="info-label">年柱</text>
+            <text class="info-value">{{baziResult.naYin.year}}</text>
+          </view>
+          <view class="info-row">
+            <text class="info-label">月柱</text>
+            <text class="info-value">{{baziResult.naYin.month}}</text>
+          </view>
+          <view class="info-row">
+            <text class="info-label">日柱</text>
+            <text class="info-value">{{baziResult.naYin.day}}</text>
+          </view>
+          <view class="info-row">
+            <text class="info-label">时柱</text>
+            <text class="info-value">{{baziResult.naYin.hour}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="card bazi-card">
+        <view class="card-header">
+          <text class="card-title">📿 八字命盘</text>
+        </view>
+        
+        <view class="bazi-grid">
+          <view class="bazi-row">
+            <view class="bazi-cell year">
+              <text class="gan">{{baziResult.yearGan}}</text>
+              <text class="zhi">{{baziResult.yearZhi}}</text>
+            </view>
+          </view>
+          <view class="bazi-row">
+            <view class="bazi-cell month">
+              <text class="gan">{{baziResult.monthGan}}</text>
+              <text class="zhi">{{baziResult.monthZhi}}</text>
+            </view>
+          </view>
+          <view class="bazi-row day-row">
+            <view class="bazi-cell day">
+              <text class="gan day-gan">{{baziResult.dayGan}}</text>
+              <text class="zhi day-zhi">{{baziResult.dayZhi}}</text>
+            </view>
+          </view>
+          <view class="bazi-row">
+            <view class="bazi-cell hour">
+              <text class="gan">{{baziResult.hourGan}}</text>
+              <text class="zhi">{{baziResult.hourZhi}}</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="bazi-info">
+          <view class="info-row">
+            <text class="info-label">出生年份</text>
+            <text class="info-value">{{baziResult.year}}</text>
+          </view>
+          <view class="info-row">
+            <text class="info-label">出生月份</text>
+            <text class="info-value">{{baziResult.month}}</text>
+          </view>
+          <view class="info-row">
+            <text class="info-label">出生日</text>
+            <text class="info-value">{{baziResult.day}}</text>
+          </view>
+          <view class="info-row">
+            <text class="info-label">出生时辰</text>
+            <text class="info-value">{{baziResult.hour}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="card">
+        <view class="card-header">
+          <text class="card-title">🎯 喜用神分析</text>
+        </view>
+        <view class="xiyong-container">
+          <view class="xiyong-badge">
+            <text class="xiyong-text">{{baziResult.xiyongShen}}</text>
+          </view>
+          <text class="xiyong-label">喜用神</text>
+        </view>
+        <view class="analysis-text">
+          <text>{{baziResult.analysis}}</text>
+        </view>
+      </view>
+
+      <view class="card">
+        <view class="card-header">
+          <text class="card-title">📚 五行解读</text>
+        </view>
+        <view class="wuxing-grid">
+          <view class="wuxing-item">
+            <text class="wuxing-icon">🌲</text>
+            <text class="wuxing-name">木</text>
+            <text class="wuxing-desc">仁、生长、条达</text>
+          </view>
+          <view class="wuxing-item">
+            <text class="wuxing-icon">🔥</text>
+            <text class="wuxing-name">火</text>
+            <text class="wuxing-desc">礼、炎热、向上</text>
+          </view>
+          <view class="wuxing-item">
+            <text class="wuxing-icon">🏔️</text>
+            <text class="wuxing-name">土</text>
+            <text class="wuxing-desc">信、敦厚、承载</text>
+          </view>
+          <view class="wuxing-item">
+            <text class="wuxing-icon">⚔️</text>
+            <text class="wuxing-name">金</text>
+            <text class="wuxing-desc">义、收敛、锐利</text>
+          </view>
+          <view class="wuxing-item">
+            <text class="wuxing-icon">💧</text>
+            <text class="wuxing-name">水</text>
+            <text class="wuxing-desc">智、流动、柔顺</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 详细分析（根据《渊海子平》） -->
+      <view wx:if="{{baziResult.detailedAnalysis}}" class="card detailed-analysis">
+        <view class="card-header">
+          <text class="card-title">📖 日柱分析</text>
+        </view>
+        <view class="analysis-section">
+          <text class="analysis-text">{{baziResult.detailedAnalysis.riZhu}}</text>
+        </view>
+      </view>
+
+      <view wx:if="{{baziResult.detailedAnalysis && baziResult.detailedAnalysis.yuanhaiPoem}}" class="card">
+        <view class="card-header">
+          <text class="card-title">📜 渊海子平论干</text>
+        </view>
+        <view class="poem-section">
+          <text class="poem-text">{{baziResult.detailedAnalysis.yuanhaiPoem}}</text>
+        </view>
+      </view>
+
+      <view wx:if="{{baziResult.detailedAnalysis}}" class="card">
+        <view class="card-header">
+          <text class="card-title">🌙 月令分析</text>
+        </view>
+        <view class="analysis-section">
+          <text class="analysis-text">{{baziResult.detailedAnalysis.yueLing}}</text>
+        </view>
+      </view>
+
+      <view wx:if="{{baziResult.detailedAnalysis}}" class="card">
+        <view class="card-header">
+          <text class="card-title">⚖️ 五行分析</text>
+        </view>
+        <view class="analysis-section">
+          <text class="analysis-text">{{baziResult.detailedAnalysis.wuXing}}</text>
+        </view>
+      </view>
+
+      <view wx:if="{{baziResult.detailedAnalysis}}" class="card">
+        <view class="card-header">
+          <text class="card-title">🎭 十神分析</text>
+        </view>
+        <view class="analysis-section">
+          <text class="analysis-text">{{baziResult.detailedAnalysis.shiShen}}</text>
+        </view>
+      </view>
+
+      <view wx:if="{{baziResult.detailedAnalysis}}" class="card">
+        <view class="card-header">
+          <text class="card-title">🏛️ 格局分析</text>
+        </view>
+        <view class="analysis-section">
+          <text class="analysis-text">{{baziResult.detailedAnalysis.geJu}}</text>
+        </view>
+      </view>
+
+      <view wx:if="{{baziResult.detailedAnalysis}}" class="card">
+        <view class="card-header">
+          <text class="card-title">🌟 运势分析</text>
+        </view>
+        <view class="analysis-section">
+          <text class="analysis-text">{{baziResult.detailedAnalysis.yunShi}}</text>
+        </view>
+      </view>
+
+      <view wx:if="{{baziResult.detailedAnalysis && baziResult.detailedAnalysis.jianYi.length > 0}}" class="card">
+        <view class="card-header">
+          <text class="card-title">💡 综合建议</text>
+        </view>
+        <view class="suggestions-list">
+          <view wx:for="{{baziResult.detailedAnalysis.jianYi}}" wx:key="index" class="suggestion-item">
+            <text class="suggestion-icon">✓</text>
+            <text class="suggestion-text">{{item}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 《滴天髓》分析 -->
+      <view wx:if="{{baziResult.ditianSuiAnalysis}}" class="card ditian-card">
+        <view class="card-header">
+          <text class="card-title">🔮 《滴天髓》通神论</text>
+        </view>
+        <view class="poem-section">
+          <text class="poem-text">{{baziResult.ditianSuiAnalysis.tongshen}}</text>
+        </view>
+      </view>
+
+      <view wx:if="{{baziResult.ditianSuiAnalysis}}" class="card">
+        <view class="card-header">
+          <text class="card-title">💎 《滴天髓》性情论</text>
+        </view>
+        <view class="analysis-section">
+          <view class="xingqing-section">
+            <view class="xingqing-item positive">
+              <text class="xingqing-label">优点：</text>
+              <text class="xingqing-content">{{baziResult.ditianSuiAnalysis.xingqing.pos}}</text>
+            </view>
+            <view class="xingqing-item negative">
+              <text class="xingqing-label">注意：</text>
+              <text class="xingqing-content">{{baziResult.ditianSuiAnalysis.xingqing.neg}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view wx:if="{{baziResult.ditianSuiAnalysis}}" class="card">
+        <view class="card-header">
+          <text class="card-title">🏛️ 《滴天髓》格局论</text>
+        </view>
+        <view class="analysis-section">
+          <text class="analysis-text">{{baziResult.ditianSuiAnalysis.geju}}</text>
+        </view>
+      </view>
+
+      <view wx:if="{{baziResult.ditianSuiAnalysis}}" class="card">
+        <view class="card-header">
+          <text class="card-title">🌟 《滴天髓》运势论</text>
+        </view>
+        <view class="analysis-section">
+          <text class="analysis-text">{{baziResult.ditianSuiAnalysis.yunshi}}</text>
+        </view>
+      </view>
+
+      <view wx:if="{{baziResult.ditianSuiAnalysis}}" class="card">
+        <view class="card-header">
+          <text class="card-title">📜 《滴天髓》总论</text>
+        </view>
+        <view class="analysis-section">
+          <text class="analysis-text">{{baziResult.ditianSuiAnalysis.zonglun}}</text>
+        </view>
+      </view>
+
+      <view class="card reference-card">
+        <view class="card-header">
+          <text class="card-title">📚 参考典籍</text>
+        </view>
+        <view class="reference-list">
+          <view class="reference-item main-reference">
+            <text class="reference-icon">📖</text>
+            <view class="reference-info">
+              <text class="reference-title">渊海子平</text>
+              <text class="reference-desc">八字命理开山之作，徐子平著，奠定子平术基础</text>
+            </view>
+          </view>
+          <view class="reference-item second-reference">
+            <text class="reference-icon">📖</text>
+            <view class="reference-info">
+              <text class="reference-title">滴天髓</text>
+              <text class="reference-desc">命理哲学巅峰之作，京图著，通神论性情</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{resultType === 'symptom'}}" class="result-section">
+      <view class="card">
+        <view class="card-header">
+          <text class="card-title">🏥 所选症状</text>
+        </view>
+        <view class="symptoms-list">
+          <view wx:for="{{symptomResult.symptoms}}" wx:key="*this" class="symptom-tag">
+            <text>{{item}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view wx:if="{{symptomResult.patternSummary}}" class="card highlight-card">
+        <view class="card-header">
+          <text class="card-title">⚖️ 辨证概要</text>
+        </view>
+        <text class="pattern-summary">{{symptomResult.patternSummary}}</text>
+      </view>
+
+      <view
+        wx:for="{{symptomResult.bodyPartReports}}"
+        wx:key="partId"
+        class="card body-part-card"
+      >
+        <view class="card-header">
+          <text class="card-title">📍 {{item.partName}}</text>
+          <text class="meridian-tag">{{item.meridian}}</text>
+        </view>
+        <view class="part-symptoms">
+          <text wx:for="{{item.symptoms}}" wx:for-item="sn" wx:key="*this" class="mini-tag">{{sn}}</text>
+        </view>
+        <view class="classic-quote-box">
+          <text class="quote-label">典籍</text>
+          <text class="quote-text">{{item.classicQuote}}</text>
+        </view>
+        <view class="analysis-section">
+          <text class="analysis-text pre-wrap">{{item.analysis}}</text>
+        </view>
+      </view>
+
+      <view wx:if="{{symptomResult.organReports.length}}" class="card">
+        <view class="card-header">
+          <text class="card-title">🫀 脏腑相关（《黄帝内经》）</text>
+        </view>
+        <view wx:for="{{symptomResult.organReports}}" wx:key="organ" class="organ-block">
+          <view class="organ-head">
+            <text class="organ-name">{{item.organ}}</text>
+            <text class="organ-wuxing">{{item.wuxing}}</text>
+            <text class="organ-status">{{item.status}}</text>
+          </view>
+          <text class="organ-theory">{{item.theory}}</text>
+        </view>
+      </view>
+
+      <view
+        wx:for="{{symptomResult.classicAnalysis}}"
+        wx:key="title"
+        class="card classic-card"
+      >
+        <view class="card-header">
+          <text class="card-title">📜 {{item.book}}</text>
+        </view>
+        <text class="classic-subtitle">{{item.title}}</text>
+        <text class="analysis-text">{{item.content}}</text>
+      </view>
+
+      <view class="card">
+        <view class="card-header">
+          <text class="card-title">📋 综合结论</text>
+        </view>
+        <text class="analysis-text pre-wrap">{{symptomResult.conclusion}}</text>
+      </view>
+
+      <view class="card">
+        <view class="card-header">
+          <text class="card-title">🌿 起居调养</text>
+        </view>
+        <view class="suggestions-list">
+          <view wx:for="{{symptomResult.lifestyleAdvice}}" wx:key="index" class="suggestion-item">
+            <text class="suggestion-icon">◆</text>
+            <text class="suggestion-text">{{item}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="card">
+        <view class="card-header">
+          <text class="card-title">🍵 饮食宜忌（《神农本草经》）</text>
+        </view>
+        <view class="suggestions-list">
+          <view wx:for="{{symptomResult.dietAdvice}}" wx:key="index" class="suggestion-item">
+            <text class="suggestion-icon">◆</text>
+            <text class="suggestion-text">{{item}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view wx:if="{{symptomResult.caution}}" class="card caution-card">
+        <view class="card-header">
+          <text class="card-title">⚠️ 重要提示</text>
+        </view>
+        <text class="caution-text">{{symptomResult.caution}}</text>
+      </view>
+    </view>
+
+    <view class="footer-space"></view>
+  </scroll-view>
+
+  <view class="bottom-action">
+    <button class="btn-primary" bindtap="goBack">
+      <text>返回</text>
+    </button>
+  </view>
+</view>

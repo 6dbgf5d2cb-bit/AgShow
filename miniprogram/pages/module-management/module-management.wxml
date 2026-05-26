@@ -1,0 +1,84 @@
+<view class="container">
+  <view class="header">
+    <view class="back-btn" bindtap="goBack">
+      <text>←</text>
+    </view>
+    <text class="title">模块管理</text>
+    <view class="placeholder"></view>
+  </view>
+
+  <scroll-view class="module-scroll" scroll-y>
+    <view wx:for="{{modules}}" wx:key="id" class="module-card">
+      <view class="module-header">
+        <view class="module-info">
+          <text class="module-icon">{{item.icon}}</text>
+          <view class="module-text">
+            <text class="module-name">{{item.name}}</text>
+            <text class="module-id">{{item.id}}</text>
+          </view>
+        </view>
+        <view 
+          class="toggle-switch {{item.enabled ? 'on' : 'off'}}"
+          bindtap="toggleModule"
+          data-id="{{item.id}}"
+        >
+          <view class="toggle-thumb"></view>
+        </view>
+      </view>
+
+      <view class="permission-section">
+        <text class="section-title">操作权限</text>
+        <view class="permission-list">
+          <view class="permission-row">
+            <text class="permission-label">👁️ 查看</text>
+            <view 
+              class="permission-switch {{item.permissions.view ? 'on' : 'off'}}"
+              bindtap="togglePermission"
+              data-id="{{item.id}}"
+              data-action="view"
+            >
+              <view class="switch-thumb"></view>
+            </view>
+          </view>
+          <view class="permission-row">
+            <text class="permission-label">➕ 新增</text>
+            <view 
+              class="permission-switch {{item.permissions.create ? 'on' : 'off'}}"
+              bindtap="togglePermission"
+              data-id="{{item.id}}"
+              data-action="create"
+            >
+              <view class="switch-thumb"></view>
+            </view>
+          </view>
+          <view class="permission-row">
+            <text class="permission-label">✏️ 编辑</text>
+            <view 
+              class="permission-switch {{item.permissions.edit ? 'on' : 'off'}}"
+              bindtap="togglePermission"
+              data-id="{{item.id}}"
+              data-action="edit"
+            >
+              <view class="switch-thumb"></view>
+            </view>
+          </view>
+          <view class="permission-row">
+            <text class="permission-label">🗑️ 删除</text>
+            <view 
+              class="permission-switch {{item.permissions.delete ? 'on' : 'off'}}"
+              bindtap="togglePermission"
+              data-id="{{item.id}}"
+              data-action="delete"
+            >
+              <view class="switch-thumb"></view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <view class="footer-bar">
+    <button class="btn-primary" bindtap="saveModules">保存修改</button>
+  </view>
+</view>

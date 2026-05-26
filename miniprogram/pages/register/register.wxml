@@ -1,0 +1,179 @@
+<view class="container">
+  <view class="header">
+    <view class="back-btn" bindtap="goToLogin">
+      <text>←</text>
+    </view>
+    <text class="title">注册会员</text>
+    <view class="placeholder"></view>
+  </view>
+
+  <scroll-view class="form-scroll" scroll-y>
+    <view class="form-section">
+      <view class="form-group required">
+        <view class="group-title">
+          <text class="required-mark">*</text>
+          <text>必填信息</text>
+        </view>
+        
+        <view class="input-item">
+          <text class="label">用户名</text>
+          <input 
+            class="input-field" 
+            placeholder="请输入用户名（3-20字符）" 
+            value="{{username}}" 
+            bindinput="onInputChange"
+            data-field="username"
+          />
+        </view>
+
+        <view class="input-item">
+          <text class="label">密码</text>
+          <input 
+            class="input-field" 
+            placeholder="请输入密码（不少于6位）" 
+            value="{{password}}" 
+            bindinput="onInputChange"
+            data-field="password"
+            type="{{showPassword ? 'text' : 'password'}}"
+          />
+          <view class="input-action" bindtap="togglePassword">
+            <text>{{showPassword ? '🙈' : '👁️'}}</text>
+          </view>
+        </view>
+
+        <view class="input-item">
+          <text class="label">确认密码</text>
+          <input 
+            class="input-field" 
+            placeholder="请再次输入密码" 
+            value="{{confirmPassword}}" 
+            bindinput="onInputChange"
+            data-field="confirmPassword"
+            type="{{showConfirmPassword ? 'text' : 'password'}}"
+          />
+          <view class="input-action" bindtap="toggleConfirmPassword">
+            <text>{{showConfirmPassword ? '🙈' : '👁️'}}</text>
+          </view>
+        </view>
+
+        <view class="input-item">
+          <text class="label">手机号</text>
+          <input 
+            class="input-field" 
+            placeholder="请输入手机号" 
+            value="{{phone}}" 
+            bindinput="onInputChange"
+            data-field="phone"
+            type="number"
+          />
+        </view>
+      </view>
+
+      <view class="form-group optional">
+        <view class="group-title">
+          <text>选填信息</text>
+          <text class="optional-hint">（选填）</text>
+        </view>
+
+        <view class="input-item">
+          <text class="label">昵称</text>
+          <input 
+            class="input-field" 
+            placeholder="请输入昵称" 
+            value="{{nickname}}" 
+            bindinput="onInputChange"
+            data-field="nickname"
+          />
+        </view>
+
+        <view class="input-item">
+          <text class="label">邮箱</text>
+          <input 
+            class="input-field" 
+            placeholder="请输入邮箱地址" 
+            value="{{email}}" 
+            bindinput="onInputChange"
+            data-field="email"
+          />
+        </view>
+
+        <view class="input-item">
+          <text class="label">真实姓名</text>
+          <input 
+            class="input-field" 
+            placeholder="请输入真实姓名" 
+            value="{{realName}}" 
+            bindinput="onInputChange"
+            data-field="realName"
+          />
+        </view>
+
+        <view class="input-item">
+          <text class="label">性别</text>
+          <view class="gender-options">
+            <view 
+              class="gender-option {{gender === 'male' ? 'active' : ''}}" 
+              bindtap="onGenderChange" 
+              data-value="male"
+            >
+              <text>男</text>
+            </view>
+            <view 
+              class="gender-option {{gender === 'female' ? 'active' : ''}}" 
+              bindtap="onGenderChange" 
+              data-value="female"
+            >
+              <text>女</text>
+            </view>
+            <view 
+              class="gender-option {{gender === 'other' ? 'active' : ''}}" 
+              bindtap="onGenderChange" 
+              data-value="other"
+            >
+              <text>保密</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="input-item">
+          <text class="label">生日</text>
+          <picker mode="date" value="{{birthday}}" bindchange="onBirthdayChange">
+            <view class="picker-value">
+              <text>{{birthday || '请选择日期'}}</text>
+              <text class="arrow">›</text>
+            </view>
+          </picker>
+        </view>
+
+        <view class="input-item">
+          <text class="label">地区</text>
+          <input 
+            class="input-field" 
+            placeholder="请输入所在地区" 
+            value="{{region}}" 
+            bindinput="onInputChange"
+            data-field="region"
+          />
+        </view>
+      </view>
+
+      <view wx:if="{{errorMessage}}" class="error-message">
+        <text>{{errorMessage}}</text>
+      </view>
+
+      <button 
+        class="btn-primary" 
+        bindtap="onRegister"
+        disabled="{{loading}}"
+      >
+        <text wx:if="{{loading}}">注册中...</text>
+        <text wx:else>注 册</text>
+      </button>
+
+      <view class="login-link">
+        <text>已有账号？</text>
+        <text class="link" bindtap="goToLogin">立即登录</text>
+      </view>
+    </view>
+  </scroll-view>
+</view>

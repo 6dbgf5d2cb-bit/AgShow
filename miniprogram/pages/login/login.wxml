@@ -1,0 +1,138 @@
+<view class="container">
+  <view class="logo-section">
+    <view class="logo">
+      <text class="logo-text">AgShow</text>
+    </view>
+    <text class="slogan">新用户快捷登录</text>
+  </view>
+
+  <view class="form-section-wrapper">
+    <view class="form-section">
+      <view wx:if="{{errorMessage}}" class="error-message">
+        <text>{{errorMessage}}</text>
+      </view>
+
+      <view wx:if="{{privacyTip}}" class="privacy-tip">
+        <text>{{privacyTip}}</text>
+      </view>
+
+      <view class="quick-login">
+        <button
+          class="btn-wechat"
+          bindtap="onWeChatLogin"
+          loading="{{wxLoading}}"
+          disabled="{{wxLoading || phoneLoading}}"
+        >
+          <text class="btn-icon">💬</text>
+          <text>微信登录</text>
+        </button>
+
+        <!-- 须同时同意隐私协议；勿加 loading/disabled 以免阻断授权弹窗 -->
+        <button
+          class="btn-phone"
+          open-type="getPhoneNumber|agreePrivacyAuthorization"
+          bindgetphonenumber="onGetPhoneNumber"
+          bindagreeprivacyauthorization="onAgreePrivacy"
+        >
+          <text class="btn-icon">📱</text>
+          <text>{{phoneLoading ? '登录中...' : '本机号码一键登录'}}</text>
+        </button>
+
+        <view class="phone-fallback" bindtap="onManualPhoneLogin">
+          <text>无法一键登录？使用手机号登录</text>
+        </view>
+
+        <text class="quick-hint">真机一键登录需小程序认证并配置服务端解密；模拟器请用「手机号登录」</text>
+      </view>
+
+      <view class="divider">
+        <view class="divider-line"></view>
+        <text class="divider-text">或</text>
+        <view class="divider-line"></view>
+      </view>
+
+      <view class="account-toggle" bindtap="toggleAccountLogin">
+        <text>{{showAccountLogin ? '收起账号登录' : '使用账号密码登录'}}</text>
+        <text class="toggle-arrow">{{showAccountLogin ? '▲' : '▼'}}</text>
+      </view>
+
+      <view wx:if="{{showAccountLogin}}" class="account-login">
+        <view class="input-item">
+          <view class="input-icon">
+            <text class="icon">👤</text>
+          </view>
+          <input
+            class="input-field"
+            placeholder="请输入用户名"
+            value="{{username}}"
+            bindinput="onUsernameInput"
+            type="text"
+          />
+        </view>
+
+        <view class="input-item">
+          <view class="input-icon">
+            <text class="icon">🔒</text>
+          </view>
+          <input
+            class="input-field"
+            placeholder="请输入密码"
+            value="{{password}}"
+            bindinput="onPasswordInput"
+            type="{{showPassword ? 'text' : 'password'}}"
+          />
+          <view class="input-action" bindtap="togglePassword">
+            <text>{{showPassword ? '🙈' : '👁️'}}</text>
+          </view>
+        </view>
+
+        <view class="form-options">
+          <view class="checkbox-item" bindtap="onRememberMeChange">
+            <view class="checkbox {{rememberMe ? 'checked' : ''}}">
+              <text wx:if="{{rememberMe}}" class="check-icon">✓</text>
+            </view>
+            <text class="checkbox-text">记住我</text>
+          </view>
+          <text class="forgot-link" bindtap="goToForgotPassword">忘记密码？</text>
+        </view>
+
+        <button class="btn-primary" bindtap="onLogin" disabled="{{loading}}">
+          <text wx:if="{{loading}}">登录中...</text>
+          <text wx:else>账号登录</text>
+        </button>
+      </view>
+
+      <view class="register-link">
+        <text>还没有账号？</text>
+        <text class="link" bindtap="goToRegister">立即注册</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="footer">
+    <text>登录即表示同意相关服务条款与隐私政策</text>
+  </view>
+</view>
+
+<!-- 手机号输入弹层 -->
+<view wx:if="{{showPhoneModal}}" class="phone-modal-mask" catchtap="closePhoneModal">
+  <view class="phone-modal" catchtap="noop">
+    <text class="phone-modal-title">手机号登录</text>
+    <text class="phone-modal-desc">输入本机手机号完成注册/登录</text>
+    <input
+      class="phone-modal-input"
+      type="number"
+      maxlength="11"
+      placeholder="请输入11位手机号"
+      value="{{manualPhone}}"
+      bindinput="onManualPhoneInput"
+      focus="{{showPhoneModal}}"
+    />
+    <view class="phone-modal-actions">
+      <button class="phone-modal-cancel" bindtap="closePhoneModal">取消</button>
+      <button class="phone-modal-confirm" bindtap="confirmManualPhoneLogin" loading="{{phoneLoading}}">
+        登录
+      </button>
+    </view>
+  </view>
+</view>

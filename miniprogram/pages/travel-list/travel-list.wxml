@@ -1,0 +1,75 @@
+<view class="container">
+  <view class="header">
+    <view class="back-btn" bindtap="goBack">
+      <text>←</text>
+    </view>
+    <text class="title">自驾游线路</text>
+  </view>
+
+  <view class="filter-bar">
+    <view class="filter-item {{activeDifficulty === '' ? 'active' : ''}}" bindtap="filterByDifficulty('')">
+      <text>全部</text>
+    </view>
+    <view class="filter-item {{activeDifficulty === 'easy' ? 'active' : ''}}" bindtap="filterByDifficulty('easy')">
+      <text>简单</text>
+    </view>
+    <view class="filter-item {{activeDifficulty === 'medium' ? 'active' : ''}}" bindtap="filterByDifficulty('medium')">
+      <text>中等</text>
+    </view>
+    <view class="filter-item {{activeDifficulty === 'hard' ? 'active' : ''}}" bindtap="filterByDifficulty('hard')">
+      <text>困难</text>
+    </view>
+  </view>
+
+  <scroll-view class="route-list" scroll-y refresher-enabled refresher-triggered="{{isRefreshing}}" bindrefresherrefresh="onRefresh">
+    <view wx:for="{{filteredRoutes}}" wx:key="routeId" class="route-card" bindtap="goToDetail" data-id="{{item.routeId}}">
+      <view class="route-cover">
+        <image wx:if="{{item.coverImage}}" class="cover-image" src="{{item.coverImage}}" mode="aspectFill" />
+        <view wx:else class="cover-placeholder">
+          <text>🚗</text>
+        </view>
+        <view class="difficulty-badge" style="background: {{getDifficultyColor(item.difficulty)}}">
+          <text>{{getDifficultyName(item.difficulty)}}</text>
+        </view>
+      </view>
+      <view class="route-info">
+        <text class="route-title">{{item.title}}</text>
+        <view class="route-path">
+          <text class="path-label">起点：</text>
+          <text class="path-value">{{item.startPoint}}</text>
+        </view>
+        <view class="route-path">
+          <text class="path-label">终点：</text>
+          <text class="path-value">{{item.endPoint}}</text>
+        </view>
+        <view class="route-meta">
+          <view class="meta-item">
+            <text class="meta-icon">📍</text>
+            <text>{{item.distance}}km</text>
+          </view>
+          <view class="meta-item">
+            <text class="meta-icon">⏱️</text>
+            <text>{{item.duration}}小时</text>
+          </view>
+          <view class="meta-item">
+            <text class="meta-icon">👁️</text>
+            <text>{{item.viewCount}}</text>
+          </view>
+        </view>
+        <view class="route-tags">
+          <text wx:for="{{item.tags}}" wx:key="*this" wx:for-item="tag" class="tag">{{tag}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{filteredRoutes.length === 0}}" class="empty-state">
+      <text class="empty-icon">🚗</text>
+      <text class="empty-text">暂无线路</text>
+      <text class="empty-hint">贵宾会员可以发布自驾游线路</text>
+    </view>
+  </scroll-view>
+
+  <view class="bottom-publish-btn" bindtap="goToPublish">
+    <text>发布线路</text>
+  </view>
+</view>

@@ -1,0 +1,84 @@
+<view class="container">
+  <view class="header">
+    <view class="header-left" bindtap="goBack">
+      <text class="back-icon">←</text>
+    </view>
+    <text class="header-title">{{isEdit ? '编辑旅行记' : '发布旅行记'}}</text>
+    <view class="header-right"></view>
+  </view>
+
+  <scroll-view scroll-y class="content">
+    <view wx:if="{{errorMessage}}" class="error-message">
+      <text>{{errorMessage}}</text>
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">标题</text>
+      <input class="form-input" placeholder="请输入旅行记标题（最多50字）" value="{{title}}" bindinput="onTitleInput" maxlength="50" />
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">内容</text>
+      <textarea 
+        class="form-textarea" 
+        placeholder="分享你的旅行故事..." 
+        value="{{content}}" 
+        bindinput="onContentInput" 
+        maxlength="5000"
+      />
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">图片</text>
+      <view class="upload-area">
+        <view wx:for="{{images}}" wx:key="index" class="upload-item image-item">
+          <image src="{{item}}" mode="aspectFill" />
+          <view class="remove-btn" bindtap="removeImage" data-index="{{index}}">×</view>
+        </view>
+        <view wx:if="{{images.length < 9}}" class="upload-add" bindtap="chooseImage">
+          <text class="add-icon">+</text>
+          <text class="add-text">上传图片</text>
+        </view>
+        <text wx:if="{{images.length === 9}}" class="upload-tip">已达上限</text>
+      </view>
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">视频</text>
+      <view class="upload-area">
+        <view wx:for="{{videos}}" wx:key="index" class="upload-item video-item">
+          <video src="{{item}}" mode="aspectFill" />
+          <view class="remove-btn" bindtap="removeVideo" data-index="{{index}}">×</view>
+        </view>
+        <view wx:if="{{videos.length < 3}}" class="upload-add" bindtap="chooseVideo">
+          <text class="add-icon">📹</text>
+          <text class="add-text">上传视频</text>
+        </view>
+        <text wx:if="{{videos.length === 3}}" class="upload-tip">已达上限（最多3个）</text>
+      </view>
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">标签</text>
+      <input class="form-input" placeholder="多个标签用逗号分隔" value="{{tags}}" bindinput="onTagsInput" />
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">地点</text>
+      <input class="form-input" placeholder="旅行地点" value="{{location}}" bindinput="onLocationInput" />
+    </view>
+
+    <view class="form-item">
+      <view class="switch-row">
+        <text class="form-label">允许评论</text>
+        <switch class="form-switch" checked="{{allowComments}}" bindchange="onAllowCommentsChange" />
+      </view>
+    </view>
+
+    <view class="bottom-spacing"></view>
+  </scroll-view>
+
+  <view class="bottom-action-bar">
+    <button class="publish-btn" bindtap="onPublish" loading="{{loading}}">{{isEdit ? '保存' : '发布'}}</button>
+  </view>
+</view>

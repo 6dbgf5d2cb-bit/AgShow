@@ -1,0 +1,78 @@
+<wxs module="utils" src="./home-config.wxs"></wxs>
+<view class="container">
+  <view class="header">
+    <view class="back-btn" bindtap="goBack">
+      <text>←</text>
+    </view>
+    <text class="title">首页配置管理</text>
+    <view class="placeholder"></view>
+  </view>
+
+  <view class="config-section">
+    <view class="section-header">
+      <text class="section-title">首页模块配置</text>
+      <text class="section-hint">控制首页显示的模块及权限</text>
+    </view>
+  </view>
+
+  <scroll-view class="config-scroll" scroll-y>
+    <view wx:for="{{configs}}" wx:key="moduleId" class="config-card">
+      <view class="config-header">
+        <view class="config-info">
+          <text class="config-name">{{utils.getModuleName(item.moduleId)}}</text>
+          <text class="config-id">{{item.moduleId}}</text>
+        </view>
+        <view 
+          class="toggle-switch {{item.enabled ? 'on' : 'off'}}"
+          bindtap="toggleEnabled"
+          data-id="{{item.moduleId}}"
+        >
+          <view class="toggle-thumb"></view>
+        </view>
+      </view>
+
+      <view wx:if="{{item.enabled}}" class="permission-grid">
+        <view 
+          class="permission-item {{item.permissions.view ? 'active' : ''}}"
+          bindtap="togglePermission"
+          data-id="{{item.moduleId}}"
+          data-action="view"
+        >
+          <text class="permission-icon">👁️</text>
+          <text class="permission-label">查看</text>
+        </view>
+        <view 
+          class="permission-item {{item.permissions.create ? 'active' : ''}}"
+          bindtap="togglePermission"
+          data-id="{{item.moduleId}}"
+          data-action="create"
+        >
+          <text class="permission-icon">➕</text>
+          <text class="permission-label">新增</text>
+        </view>
+        <view 
+          class="permission-item {{item.permissions.edit ? 'active' : ''}}"
+          bindtap="togglePermission"
+          data-id="{{item.moduleId}}"
+          data-action="edit"
+        >
+          <text class="permission-icon">✏️</text>
+          <text class="permission-label">编辑</text>
+        </view>
+        <view 
+          class="permission-item {{item.permissions.delete ? 'active' : ''}}"
+          bindtap="togglePermission"
+          data-id="{{item.moduleId}}"
+          data-action="delete"
+        >
+          <text class="permission-icon">🗑️</text>
+          <text class="permission-label">删除</text>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <view class="footer-bar">
+    <button class="btn-primary" bindtap="saveConfig">保存配置</button>
+  </view>
+</view>

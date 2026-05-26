@@ -1,0 +1,15 @@
+var moduleNames = {
+  'travel': '自驾游',
+  'health': '健康检测',
+  'member': '会员中心',
+  'admin': '管理后台',
+  'logs': '操作日志'
+}
+
+function getModuleName(moduleId) {
+  return moduleNames[moduleId] || moduleId
+}
+
+module.exports = {
+  getModuleName: getModuleName
+}

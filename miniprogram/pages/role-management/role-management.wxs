@@ -1,0 +1,19 @@
+function getPermissionStatus(permissions, activeRole, moduleId, action) {
+  if (!permissions || !permissions[activeRole] || !permissions[activeRole][moduleId]) {
+    return false
+  }
+  return permissions[activeRole][moduleId][action] || false
+}
+
+function isSelected(arr, item) {
+  if (!arr) return false
+  for (var i = 0; i < arr.length; i++) {
+    if (arr[i] === item) return true
+  }
+  return false
+}
+
+module.exports = {
+  getPermissionStatus: getPermissionStatus,
+  isSelected: isSelected
+}

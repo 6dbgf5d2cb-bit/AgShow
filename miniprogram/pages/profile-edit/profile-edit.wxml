@@ -1,0 +1,110 @@
+<view class="container">
+  <view class="header">
+    <view class="back-btn" bindtap="goBack">
+      <text>←</text>
+    </view>
+    <text class="title">编辑个人资料</text>
+    <view class="header-placeholder"></view>
+  </view>
+
+  <scroll-view scroll-y class="form-section">
+    <view class="avatar-section">
+      <text class="form-label">头像</text>
+      <view class="avatar-wrapper" bindtap="chooseAvatar">
+        <image wx:if="{{avatarUrl}}" class="avatar" src="{{avatarUrl}}" mode="aspectFill" />
+        <view wx:else class="avatar-placeholder">
+          <text class="avatar-icon">👤</text>
+        </view>
+        <view class="avatar-edit">
+          <text>📷</text>
+        </view>
+      </view>
+      <text class="avatar-tip">点击更换头像</text>
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">昵称</text>
+      <input 
+        class="form-input" 
+        placeholder="请输入昵称"
+        value="{{nickname}}"
+        bindinput="onNicknameInput"
+      />
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">性别</text>
+      <view class="gender-options">
+        <view 
+          class="gender-option {{gender === 'male' ? 'active' : ''}}"
+          bindtap="onGenderChange"
+          data-value="male"
+        >
+          <text>👨 男</text>
+        </view>
+        <view 
+          class="gender-option {{gender === 'female' ? 'active' : ''}}"
+          bindtap="onGenderChange"
+          data-value="female"
+        >
+          <text>👩 女</text>
+        </view>
+        <view 
+          class="gender-option {{gender === 'other' ? 'active' : ''}}"
+          bindtap="onGenderChange"
+          data-value="other"
+        >
+          <text>👤 其他</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">生日</text>
+      <picker mode="date" value="{{birthday}}" bindchange="onBirthdayChange">
+        <view class="form-picker">
+          <text>{{birthday || '请选择生日'}}</text>
+          <text class="picker-arrow">→</text>
+        </view>
+      </picker>
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">地区</text>
+      <input 
+        class="form-input" 
+        placeholder="请输入所在地区"
+        value="{{region}}"
+        bindinput="onRegionChange"
+      />
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">手机号</text>
+      <input 
+        class="form-input" 
+        type="number"
+        placeholder="请输入手机号"
+        value="{{phone}}"
+        bindinput="onPhoneInput"
+      />
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">邮箱</text>
+      <input 
+        class="form-input" 
+        type="email"
+        placeholder="请输入邮箱"
+        value="{{email}}"
+        bindinput="onEmailInput"
+      />
+    </view>
+
+    <view class="bottom-spacing"></view>
+  </scroll-view>
+
+  <view class="bottom-action-bar">
+    <button class="save-btn" bindtap="saveProfile">保存</button>
+  </view>
+</view>
