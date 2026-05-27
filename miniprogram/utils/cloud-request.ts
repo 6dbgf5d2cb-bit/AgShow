@@ -91,7 +91,16 @@ function callContainer<T>(path: string, method: 'GET' | 'POST', data?: unknown):
       },
       data: data as WechatMiniprogram.IAnyObject,
       success: (res: WechatMiniprogram.RequestSuccessCallbackResult) => {
-        const body = (res.data || {}) as T & { message?: string }
+        let body: T & { message?: string }
+        try {
+          const raw = res.data
+          body = (
+            typeof raw === 'string' ? JSON.parse(raw || '{}') : raw || {}
+          ) as T & { message?: string }
+        } catch {
+          reject(new Error('云托管响应解析失败'))
+          return
+        }
         const code = res.statusCode || 0
         if (code >= 200 && code < 300) {
           resolve(body)

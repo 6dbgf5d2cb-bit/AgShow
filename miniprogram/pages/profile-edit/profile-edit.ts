@@ -76,7 +76,7 @@ Page({
     this.setData({ email: e.detail.value })
   },
 
-  saveProfile() {
+  async saveProfile() {
     const session = getCurrentSession()
     if (!session || !this.data.user) return
 
@@ -90,7 +90,7 @@ Page({
       email: this.data.email
     }
 
-    const result = updateUser(session.userId, updates)
+    const result = await updateUser(session.userId, updates)
     if (result) {
       wx.showToast({
         title: '保存成功',

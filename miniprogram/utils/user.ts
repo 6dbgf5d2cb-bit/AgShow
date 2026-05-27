@@ -88,6 +88,44 @@ const USER_WAL_KEY = 'member_user_wal'
 const USER_RECORD_PREFIX = 'member_user_record_'
 const ROLE_CONFIG_KEY = 'member_role_config'
 const ROLE_PERMISSIONS_KEY = 'member_role_permissions'
+const DELETED_USERS_KEY = 'member_user_deleted_ids'
+
+function loadDeletedUserIds(): Set<string> {
+  try {
+    const raw = wx.getStorageSync(DELETED_USERS_KEY)
+    if (!raw) return new Set()
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw
+    return new Set(Array.isArray(parsed) ? parsed.filter(Boolean) : [])
+  } catch {
+    return new Set()
+  }
+}
+
+function saveDeletedUserIds(ids: Set<string>): void {
+  wx.setStorageSync(DELETED_USERS_KEY, JSON.stringify([...ids]))
+}
+
+function markUsersAsDeleted(userIds: string[]): void {
+  if (!userIds.length) return
+  const set = loadDeletedUserIds()
+  userIds.forEach((id) => {
+    if (id) set.add(id)
+  })
+  saveDeletedUserIds(set)
+}
+
+function clearDeletedUserMark(userId: string): void {
+  if (!userId) return
+  const set = loadDeletedUserIds()
+  if (set.delete(userId)) {
+    saveDeletedUserIds(set)
+  }
+}
+
+async function pushUserAndWait(user: User): Promise<void> {
+  if (!isUserApiEnabled()) return
+  await pushUserToRemote(user)
+}
 
 function generateUserId(): string {
   return 'U' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substr(2, 6).toUpperCase()
@@ -219,6 +257,7 @@ function removeUsersFromRegistryLocal(userIds: string[]): number {
 
   userIds.forEach((id) => removeUserRecord(id))
   saveMockUsers(users)
+  markUsersAsDeleted(userIds)
 
   return before - users.length
 }
@@ -302,6 +341,7 @@ function readUserListFromStorage(): User[] {
 
 /** 将用户写入统一注册表（所有登录方式共用） */
 function upsertUserInStorage(user: User): User {
+  clearDeletedUserMark(user.userId)
   const normalized = normalizeStoredUser(user)
   let users = readAllUsersFromRegistry()
   const index = findUserIndexInList(users, normalized)
@@ -865,11 +905,16 @@ export function getUserById(userId: string): User | null {
   return readAllUsersFromRegistry().find((u) => u.userId === userId) || null
 }
 
-export function updateUser(userId: string, updates: Partial<User>): User | null {
+export async function updateUser(userId: string, updates: Partial<User>): Promise<User | null> {
   const user = getUserById(userId)
   if (!user) return null
 
   const saved = upsertUserInStorage({ ...user, ...updates })
+  try {
+    await pushUserAndWait(saved)
+  } catch (e) {
+    console.warn('[user] updateUser remote sync failed', e)
+  }
 
   const session = getCurrentSession()
   if (session && session.userId === userId) {
@@ -886,7 +931,7 @@ export function updateUser(userId: string, updates: Partial<User>): User | null 
 }
 
 /** 直接设置用户角色列表 */
-export function setUserRoles(userId: string, roles: UserRole[]): User | null {
+export async function setUserRoles(userId: string, roles: UserRole[]): Promise<User | null> {
   const safeRoles = roles.length > 0 ? roles : ['member']
   return updateUser(userId, { roles: safeRoles })
 }
@@ -920,7 +965,7 @@ export function upgradeMemberLevel(userId: string, newLevel: MemberLevel): boole
   user.memberLevel = newLevel
   saveMockUsers(users)
   
-  updateUser(userId, { memberLevel: newLevel })
+  void updateUser(userId, { memberLevel: newLevel })
   return true
 }
 
@@ -933,7 +978,7 @@ export function addPoints(userId: string, points: number): number {
   user.points = Math.max(0, user.points + points)
   saveMockUsers(users)
   
-  updateUser(userId, { points: user.points })
+  void updateUser(userId, { points: user.points })
   return user.points
 }
 
@@ -946,7 +991,7 @@ export function assignRole(userId: string, role: UserRole): boolean {
   if (!user.roles.includes(role)) {
     user.roles.push(role)
     saveMockUsers(users)
-    updateUser(userId, { roles: user.roles })
+    void updateUser(userId, { roles: user.roles })
   }
   
   return true
@@ -962,19 +1007,19 @@ export function removeRole(userId: string, role: UserRole): boolean {
   if (index !== -1 && user.roles.length > 1) {
     user.roles.splice(index, 1)
     saveMockUsers(users)
-    updateUser(userId, { roles: user.roles })
+    void updateUser(userId, { roles: user.roles })
     return true
   }
   
   return false
 }
 
-export function verifyPhone(userId: string): boolean {
-  return updateUser(userId, { phoneVerifiedTime: Date.now() }) !== null
+export async function verifyPhone(userId: string): Promise<boolean> {
+  return (await updateUser(userId, { phoneVerifiedTime: Date.now() })) !== null
 }
 
-export function verifyEmail(userId: string): boolean {
-  return updateUser(userId, { emailVerifiedTime: Date.now() }) !== null
+export async function verifyEmail(userId: string): Promise<boolean> {
+  return (await updateUser(userId, { emailVerifiedTime: Date.now() })) !== null
 }
 
 /** 强制把用户写入注册表并同步列表（注册/登录后调用） */
@@ -1003,11 +1048,12 @@ export function getAllUsers(): User[] {
     saveMockUsers([admin])
     users = [admin]
   } else {
-    users.forEach((u) => saveUserRecord(u))
     saveMockUsers(users)
   }
 
+  const deleted = loadDeletedUserIds()
   return users
+    .filter((u) => !deleted.has(u.userId))
     .slice()
     .sort((a, b) => (b.registerTime || 0) - (a.registerTime || 0))
 }
@@ -1018,9 +1064,13 @@ function userRevision(user: Partial<User>): number {
 
 /** 将服务端用户合并到本机（较新的 updatedAt 优先，避免覆盖刚做的管理操作） */
 export function mergeUsersIntoLocalRegistry(remoteUsers: User[]): User[] {
+  const deleted = loadDeletedUserIds()
+
   for (const raw of remoteUsers) {
     const users = readAllUsersFromRegistry()
     const normalized = normalizeStoredUser(raw)
+    if (deleted.has(normalized.userId)) continue
+
     const index = findUserIndexInList(users, normalized)
 
     if (index < 0) {
@@ -1029,12 +1079,14 @@ export function mergeUsersIntoLocalRegistry(remoteUsers: User[]): User[] {
     }
 
     const local = users[index]
-    if (userRevision(normalized) >= userRevision(local)) {
+    // 仅当云端版本更新时才覆盖本地，避免刚做的管理操作被旧数据冲掉
+    if (userRevision(normalized) > userRevision(local)) {
       saveUserRecord(normalizeStoredUser({ ...local, ...normalized }))
     }
   }
 
   let users = ensureDefaultAdminInList(readAllUsersFromRegistry())
+  users = users.filter((u) => !deleted.has(u.userId))
   saveMockUsers(users)
   return users
     .slice()
@@ -1081,47 +1133,72 @@ export function deleteUser(userId: string): boolean {
 export async function deleteUsers(userIds: string[]): Promise<number> {
   const count = removeUsersFromRegistryLocal(userIds)
   if (count > 0 && isUserApiEnabled()) {
-    await deleteRemoteUsers(userIds)
+    try {
+      await deleteRemoteUsers(userIds)
+    } catch (e) {
+      console.warn('[user] remote delete failed, kept local tombstone', e)
+    }
   }
   return count
 }
 
-export function batchUpdateRole(userIds: string[], role: UserRole, add: boolean = true): number {
+export async function batchUpdateRole(
+  userIds: string[],
+  role: UserRole,
+  add: boolean = true
+): Promise<number> {
   let count = 0
 
-  userIds.forEach((userId) => {
+  for (const userId of userIds) {
     const user = getUserById(userId)
-    if (!user) return
+    if (!user) continue
 
     const roles = Array.isArray(user.roles) ? [...user.roles] : ['member']
+    let nextRoles: UserRole[] | null = null
+
     if (add) {
       if (!roles.includes(role)) {
-        roles.push(role)
-        upsertUserInStorage({ ...user, roles })
-        count++
+        nextRoles = [...roles, role]
       }
     } else {
       const index = roles.indexOf(role)
       if (index !== -1 && roles.length > 1) {
-        roles.splice(index, 1)
-        upsertUserInStorage({ ...user, roles })
-        count++
+        nextRoles = roles.filter((r) => r !== role)
       }
     }
-  })
+
+    if (!nextRoles) continue
+
+    const saved = upsertUserInStorage({ ...user, roles: nextRoles })
+    try {
+      await pushUserAndWait(saved)
+    } catch (e) {
+      console.warn('[user] batchUpdateRole remote sync failed', e)
+    }
+    count++
+  }
 
   return count
 }
 
-export function batchUpdateMemberLevel(userIds: string[], level: MemberLevel): number {
+export async function batchUpdateMemberLevel(
+  userIds: string[],
+  level: MemberLevel
+): Promise<number> {
   let count = 0
 
-  userIds.forEach((userId) => {
+  for (const userId of userIds) {
     const user = getUserById(userId)
-    if (!user) return
-    upsertUserInStorage({ ...user, memberLevel: level })
+    if (!user) continue
+
+    const saved = upsertUserInStorage({ ...user, memberLevel: level })
+    try {
+      await pushUserAndWait(saved)
+    } catch (e) {
+      console.warn('[user] batchUpdateMemberLevel remote sync failed', e)
+    }
     count++
-  })
+  }
 
   return count
 }

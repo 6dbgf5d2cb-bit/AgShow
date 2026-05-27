@@ -59,11 +59,11 @@ Page({
   },
 
   onShow() {
-    this.loadUsers()
+    this.loadUsers(false)
   },
 
   onPullDownRefresh() {
-    this.loadUsers()
+    this.loadUsers(true)
     wx.stopPullDownRefresh()
   },
 
@@ -118,11 +118,11 @@ Page({
     this.setData({ roleOptions })
   },
 
-  async loadUsers() {
+  async loadUsers(pullRemote = true) {
     this.setData({ loadingUsers: true })
     let users = getAllUsers()
 
-    if (isUserApiEnabled()) {
+    if (pullRemote && isUserApiEnabled()) {
       try {
         users = await pullRemoteUsersAndMerge()
       } catch (error: any) {
@@ -245,15 +245,15 @@ Page({
         showDeleteModal: false,
         selectedUsers: []
       })
-      this.loadUsers()
+      this.loadUsers(false)
     } catch (e) {
       console.error('[user-management] delete failed', e)
       wx.showToast({
-        title: '删除失败，请检查云托管连接',
+        title: '删除失败',
         icon: 'none',
         duration: 2500
       })
-      this.loadUsers()
+      this.loadUsers(false)
     }
   },
 
@@ -281,28 +281,38 @@ Page({
     }
   },
 
-  confirmRoleChange() {
+  async confirmRoleChange() {
     const { selectedUsers, selectedRole, roleAction } = this.data
-    
+
     if (!selectedRole) {
       wx.showToast({ title: '请选择角色', icon: 'none' })
       return
     }
 
-    const updatedCount = batchUpdateRole(selectedUsers, selectedRole as UserRole, roleAction === 'add')
-    
-    wx.showToast({
-      title: `${roleAction === 'add' ? '添加' : '移除'}成功，共修改 ${updatedCount} 个用户`,
-      icon: 'success',
-      duration: 1500
-    })
-
-    this.setData({
-      showRoleModal: false,
-      selectedUsers: []
-    })
-    
-    this.loadUsers()
+    try {
+      const updatedCount = await batchUpdateRole(
+        selectedUsers,
+        selectedRole as UserRole,
+        roleAction === 'add'
+      )
+      if (updatedCount === 0) {
+        wx.showToast({ title: '没有用户被修改', icon: 'none' })
+        return
+      }
+      wx.showToast({
+        title: `${roleAction === 'add' ? '添加' : '移除'}成功，共修改 ${updatedCount} 个用户`,
+        icon: 'success',
+        duration: 1500
+      })
+      this.setData({
+        showRoleModal: false,
+        selectedUsers: []
+      })
+      this.loadUsers(false)
+    } catch (e) {
+      console.error('[user-management] role change failed', e)
+      wx.showToast({ title: '角色修改失败', icon: 'none' })
+    }
   },
 
   showLevelModal() {
@@ -357,54 +367,65 @@ Page({
     }
   },
 
-  confirmSingleUserRoleChange() {
+  async confirmSingleUserRoleChange() {
     const { currentUserId, currentUserRoles } = this.data
 
-    const saved = setUserRoles(currentUserId, currentUserRoles as UserRole[])
-    if (!saved) {
-      wx.showToast({ title: '用户不存在', icon: 'none' })
-      return
+    try {
+      const saved = await setUserRoles(currentUserId, currentUserRoles as UserRole[])
+      if (!saved) {
+        wx.showToast({ title: '用户不存在', icon: 'none' })
+        return
+      }
+
+      wx.showToast({
+        title: '角色授权成功',
+        icon: 'success',
+        duration: 1500
+      })
+
+      this.setData({
+        showSingleUserRoleModal: false
+      })
+
+      this.loadUsers(false)
+    } catch (e) {
+      console.error('[user-management] single role change failed', e)
+      wx.showToast({ title: '角色授权失败', icon: 'none' })
     }
-
-    wx.showToast({
-      title: '角色授权成功',
-      icon: 'success',
-      duration: 1500
-    })
-
-    this.setData({
-      showSingleUserRoleModal: false
-    })
-
-    this.loadUsers()
   },
 
   selectLevel(e: any) {
     this.setData({ selectedLevel: e.currentTarget.dataset.value })
   },
 
-  confirmLevelChange() {
+  async confirmLevelChange() {
     const { selectedUsers, selectedLevel } = this.data
-    
+
     if (!selectedLevel) {
       wx.showToast({ title: '请选择等级', icon: 'none' })
       return
     }
 
-    const updatedCount = batchUpdateMemberLevel(selectedUsers, selectedLevel as MemberLevel)
-    
-    wx.showToast({
-      title: `等级修改成功，共修改 ${updatedCount} 个用户`,
-      icon: 'success',
-      duration: 1500
-    })
-
-    this.setData({
-      showLevelModal: false,
-      selectedUsers: []
-    })
-    
-    this.loadUsers()
+    try {
+      const updatedCount = await batchUpdateMemberLevel(selectedUsers, selectedLevel as MemberLevel)
+      if (updatedCount === 0) {
+        wx.showToast({ title: '没有用户被修改', icon: 'none' })
+        return
+      }
+      wx.showToast({
+        title: `等级修改成功，共修改 ${updatedCount} 个用户`,
+        icon: 'success',
+        duration: 1500
+      })
+      this.setData({
+        showLevelModal: false,
+        selectedUsers: []
+      })
+      this.loadUsers(false)
+    } catch (e) {
+      console.error('[user-management] level change failed', e)
+      wx.showToast({ title: '等级修改失败', icon: 'none' })
+    }
   },
 
   showBatchAddModal() {
