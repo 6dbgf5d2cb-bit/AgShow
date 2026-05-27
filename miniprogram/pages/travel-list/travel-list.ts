@@ -1,4 +1,4 @@
-import { getActiveRoutes, DifficultyConfig, canPublishRoute } from '../../utils/travel'
+import { getActiveRoutes, pullRemoteRoutesAndMerge, DifficultyConfig, canPublishRoute } from '../../utils/travel'
 import { getCurrentSession } from '../../utils/user'
 
 Page({
@@ -20,7 +20,12 @@ Page({
     this.checkPublishPermission()
   },
 
-  loadRoutes() {
+  async loadRoutes() {
+    try {
+      await pullRemoteRoutesAndMerge()
+    } catch {
+      wx.showToast({ title: '同步线路失败', icon: 'none', duration: 2000 })
+    }
     const routes = getActiveRoutes()
     this.setData({
       routes,
@@ -51,13 +56,10 @@ Page({
     this.setData({ filteredRoutes: filtered })
   },
 
-  onRefresh() {
+  async onRefresh() {
     this.setData({ isRefreshing: true })
-    
-    setTimeout(() => {
-      this.loadRoutes()
-      this.setData({ isRefreshing: false })
-    }, 500)
+    await this.loadRoutes()
+    this.setData({ isRefreshing: false })
   },
 
   getDifficultyName(difficulty: string): string {

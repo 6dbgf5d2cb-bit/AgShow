@@ -1,4 +1,4 @@
-import { getActiveLogs, canPublishLog, deleteLog, TravelLog, getPublisherInfo } from '../../utils/travellog'
+import { getActiveLogs, pullRemoteLogsAndMerge, canPublishLog, deleteLog, TravelLog, getPublisherInfo } from '../../utils/travellog'
 import { getCurrentSession, getUserById } from '../../utils/user'
 import { MemberLevel, MemberLevelConfig } from '../../utils/user'
 
@@ -35,7 +35,12 @@ Page({
     this.loadLogs()
   },
 
-  loadLogs() {
+  async loadLogs() {
+    try {
+      await pullRemoteLogsAndMerge()
+    } catch {
+      wx.showToast({ title: '同步旅行记失败', icon: 'none', duration: 2000 })
+    }
     const logs = getActiveLogs()
     const { selectedLogs } = this.data
 

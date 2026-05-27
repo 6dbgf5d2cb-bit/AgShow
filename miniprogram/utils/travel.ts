@@ -1,4 +1,10 @@
 import { getUserById, MemberLevel, User } from './user'
+import {
+  isContentApiEnabled,
+  fetchRemoteRoutes,
+  pushRouteToRemote,
+  contentRevision
+} from './content-api'
 
 export interface RouteParticipant {
   userId: string
@@ -168,6 +174,47 @@ function saveTravelRoutes(routes: TravelRoute[]): void {
   wx.setStorageSync(TRAVEL_ROUTES_KEY, JSON.stringify(routes))
 }
 
+function mergeRoutes(local: TravelRoute[], remote: TravelRoute[]): TravelRoute[] {
+  const map = new Map<string, TravelRoute>()
+  for (const item of local) {
+    if (item.routeId) map.set(item.routeId, item)
+  }
+  for (const remoteItem of remote) {
+    if (!remoteItem.routeId) continue
+    const existing = map.get(remoteItem.routeId)
+    if (!existing) {
+      map.set(remoteItem.routeId, remoteItem)
+      continue
+    }
+    if (contentRevision(remoteItem) > contentRevision(existing)) {
+      map.set(remoteItem.routeId, remoteItem)
+    }
+  }
+  return Array.from(map.values())
+}
+
+async function syncRouteToRemote(route: TravelRoute): Promise<void> {
+  if (!isContentApiEnabled()) return
+  try {
+    await pushRouteToRemote(route)
+  } catch (e) {
+    console.warn('[travel] remote sync failed', e)
+  }
+}
+
+/** 从云端拉取自驾游线路并合并到本机 */
+export async function pullRemoteRoutesAndMerge(): Promise<void> {
+  if (!isContentApiEnabled()) return
+  try {
+    const remote = await fetchRemoteRoutes()
+    const local = getTravelRoutes()
+    saveTravelRoutes(mergeRoutes(local, remote))
+  } catch (e) {
+    console.warn('[travel] pull remote failed', e)
+    throw e
+  }
+}
+
 export function canPublishRoute(userId: string): { canPublish: boolean; message: string } {
   const user = getUserById(userId)
   if (!user) {
@@ -245,7 +292,8 @@ export function createRoute(
   
   routes.push(newRoute)
   saveTravelRoutes(routes)
-  
+  void syncRouteToRemote(newRoute)
+
   return newRoute
 }
 
@@ -277,6 +325,7 @@ export function updateRoute(routeId: string, updates: Partial<TravelRoute>): Tra
   }
   
   saveTravelRoutes(routes)
+  void syncRouteToRemote(routes[index])
   return routes[index]
 }
 
@@ -287,7 +336,9 @@ export function deleteRoute(routeId: string): boolean {
   if (index === -1) return false
   
   routes[index].status = 'deleted'
+  routes[index].updateTime = Date.now()
   saveTravelRoutes(routes)
+  void syncRouteToRemote(routes[index])
   return true
 }
 
@@ -328,8 +379,10 @@ export function signUpRoute(routeId: string, userId: string): { success: boolean
   }
   
   route.participants.push(participant)
+  route.updateTime = Date.now()
   saveTravelRoutes(routes)
-  
+  void syncRouteToRemote(route)
+
   return { success: true, message: '报名成功' }
 }
 

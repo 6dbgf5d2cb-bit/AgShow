@@ -17,6 +17,8 @@ const PORT = Number(process.env.PORT || 80)
 const HOST = process.env.HOST || '0.0.0.0'
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data')
 const USERS_FILE = path.join(DATA_DIR, 'users.json')
+const ROUTES_FILE = path.join(DATA_DIR, 'travel_routes.json')
+const LOGS_FILE = path.join(DATA_DIR, 'travel_logs.json')
 
 let accessToken = ''
 let tokenExpireAt = 0
@@ -115,6 +117,47 @@ function listAllUsers() {
   return Object.values(map).sort((a, b) => (b.registerTime || 0) - (a.registerTime || 0))
 }
 
+function loadIdMap(filePath) {
+  try {
+    const raw = fs.readFileSync(filePath, 'utf8')
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+function saveIdMap(filePath, map) {
+  fs.mkdirSync(DATA_DIR, { recursive: true })
+  fs.writeFileSync(filePath, JSON.stringify(map, null, 2), 'utf8')
+}
+
+function upsertRouteInMap(route) {
+  if (!route || !route.routeId) throw new Error('routeId required')
+  const map = loadIdMap(ROUTES_FILE)
+  map[route.routeId] = { ...map[route.routeId], ...route, updateTime: Date.now() }
+  saveIdMap(ROUTES_FILE, map)
+  return map[route.routeId]
+}
+
+function listAllRoutes() {
+  const map = loadIdMap(ROUTES_FILE)
+  return Object.values(map).sort((a, b) => (b.publishTime || 0) - (a.publishTime || 0))
+}
+
+function upsertLogInMap(log) {
+  if (!log || !log.logId) throw new Error('logId required')
+  const map = loadIdMap(LOGS_FILE)
+  map[log.logId] = { ...map[log.logId], ...log, updateTime: Date.now() }
+  saveIdMap(LOGS_FILE, map)
+  return map[log.logId]
+}
+
+function listAllLogs() {
+  const map = loadIdMap(LOGS_FILE)
+  return Object.values(map).sort((a, b) => (b.publishTime || 0) - (a.publishTime || 0))
+}
+
 const server = http.createServer(async (req, res) => {
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
@@ -174,6 +217,28 @@ const server = http.createServer(async (req, res) => {
       return
     }
 
+    if (pathname === '/api/travel/routes' && req.method === 'GET') {
+      send(res, 200, { routes: listAllRoutes() })
+      return
+    }
+
+    if (pathname === '/api/travel/routes/upsert' && req.method === 'POST') {
+      const route = upsertRouteInMap(body)
+      send(res, 200, { route })
+      return
+    }
+
+    if (pathname === '/api/travel/logs' && req.method === 'GET') {
+      send(res, 200, { logs: listAllLogs() })
+      return
+    }
+
+    if (pathname === '/api/travel/logs/upsert' && req.method === 'POST') {
+      const log = upsertLogInMap(body)
+      send(res, 200, { log })
+      return
+    }
+
     send(res, 404, { message: 'not found', path: pathname })
   } catch (e) {
     console.error('[api]', pathname, e)
@@ -193,5 +258,11 @@ server.listen(PORT, HOST, () => {
   console.log('  GET  /api/users')
   console.log('  POST /api/users/upsert')
   console.log('  POST /api/users/delete')
+  console.log('  GET  /api/travel/routes')
+  console.log('  POST /api/travel/routes/upsert')
+  console.log('  GET  /api/travel/logs')
+  console.log('  POST /api/travel/logs/upsert')
   console.log(`  Users: ${USERS_FILE}`)
+  console.log(`  Routes: ${ROUTES_FILE}`)
+  console.log(`  Logs: ${LOGS_FILE}`)
 })

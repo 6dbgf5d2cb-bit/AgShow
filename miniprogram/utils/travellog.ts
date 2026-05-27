@@ -1,4 +1,10 @@
 import { getUserById, MemberLevel, User } from './user'
+import {
+  isContentApiEnabled,
+  fetchRemoteLogs,
+  pushLogToRemote,
+  contentRevision
+} from './content-api'
 
 const TRAVELLOG_KEY = 'travel_logs'
 
@@ -191,15 +197,50 @@ function getTravelLogs(): TravelLog[] {
 
 function saveTravelLogs(logs: TravelLog[]): void {
   try {
-    const data = JSON.stringify(logs)
-    console.log('saveTravelLogs: saving', logs.length, 'logs, data length:', data.length)
-    wx.setStorageSync(TRAVELLOG_KEY, data)
-    
-    // 验证保存是否成功
-    const saved = wx.getStorageSync(TRAVELLOG_KEY)
-    console.log('saveTravelLogs: save verification - data exists:', !!saved)
+    wx.setStorageSync(TRAVELLOG_KEY, JSON.stringify(logs))
   } catch (e) {
     console.error('saveTravelLogs failed:', e)
+  }
+}
+
+function mergeLogs(local: TravelLog[], remote: TravelLog[]): TravelLog[] {
+  const map = new Map<string, TravelLog>()
+  for (const item of local) {
+    if (item.logId) map.set(item.logId, item)
+  }
+  for (const remoteItem of remote) {
+    if (!remoteItem.logId) continue
+    const existing = map.get(remoteItem.logId)
+    if (!existing) {
+      map.set(remoteItem.logId, remoteItem)
+      continue
+    }
+    if (contentRevision(remoteItem) > contentRevision(existing)) {
+      map.set(remoteItem.logId, remoteItem)
+    }
+  }
+  return Array.from(map.values())
+}
+
+async function syncLogToRemote(log: TravelLog): Promise<void> {
+  if (!isContentApiEnabled()) return
+  try {
+    await pushLogToRemote(log)
+  } catch (e) {
+    console.warn('[travellog] remote sync failed', e)
+  }
+}
+
+/** 从云端拉取旅行记并合并到本机 */
+export async function pullRemoteLogsAndMerge(): Promise<void> {
+  if (!isContentApiEnabled()) return
+  try {
+    const remote = await fetchRemoteLogs()
+    const local = getTravelLogs()
+    saveTravelLogs(mergeLogs(local, remote))
+  } catch (e) {
+    console.warn('[travellog] pull remote failed', e)
+    throw e
   }
 }
 
@@ -259,11 +300,8 @@ export function createLog(
   console.log('Before create: logs count =', logs.length)
   logs.unshift(newLog)
   saveTravelLogs(logs)
-  
-  // 验证保存是否成功
-  const savedLogs = getTravelLogs()
-  console.log('After create: logs count =', savedLogs.length)
-  
+  void syncLogToRemote(newLog)
+
   return newLog
 }
 
@@ -306,13 +344,17 @@ export function toggleLike(logId: string, userId: string): { liked: boolean; cou
     const newLikes = likes.filter((id: string) => id !== userId)
     wx.setStorageSync(likesKey, newLikes)
     log.likeCount = newLikes.length
+    log.updateTime = Date.now()
     saveTravelLogs(logs)
+    void syncLogToRemote(log)
     return { liked: false, count: log.likeCount }
   } else {
     const newLikes = [...likes, userId]
     wx.setStorageSync(likesKey, newLikes)
     log.likeCount = newLikes.length
+    log.updateTime = Date.now()
     saveTravelLogs(logs)
+    void syncLogToRemote(log)
     return { liked: true, count: log.likeCount }
   }
 }
@@ -345,8 +387,10 @@ export function addComment(logId: string, authorId: string, content: string, rep
   
   log.comments.push(comment)
   log.commentCount = log.comments.length
+  log.updateTime = Date.now()
   saveTravelLogs(logs)
-  
+  void syncLogToRemote(log)
+
   return true
 }
 
@@ -375,8 +419,10 @@ export function deleteComment(logId: string, commentId: string, userId: string):
   
   log.comments.splice(commentIndex, 1)
   log.commentCount = log.comments.length
+  log.updateTime = Date.now()
   saveTravelLogs(logs)
-  
+  void syncLogToRemote(log)
+
   return true
 }
 
@@ -393,6 +439,7 @@ export function updateLog(logId: string, updates: Partial<TravelLog>): TravelLog
   }
   
   saveTravelLogs(logs)
+  void syncLogToRemote(logs[index])
   return logs[index]
 }
 
@@ -403,7 +450,9 @@ export function deleteLog(logId: string): boolean {
   if (index === -1) return false
   
   logs[index].status = 'deleted'
+  logs[index].updateTime = Date.now()
   saveTravelLogs(logs)
+  void syncLogToRemote(logs[index])
   return true
 }
 
@@ -414,8 +463,10 @@ export function toggleComments(logId: string): boolean {
   if (index === -1) return false
   
   logs[index].allowComments = !logs[index].allowComments
+  logs[index].updateTime = Date.now()
   saveTravelLogs(logs)
-  
+  void syncLogToRemote(logs[index])
+
   return logs[index].allowComments
 }
 

@@ -1,4 +1,4 @@
-import { getRouteById, getPublisherInfo, incrementViewCount, canViewPhone, makePhoneCall, deleteRoute, signUpRoute, isUserSignedUp, DifficultyConfig, RouteParticipant } from '../../utils/travel'
+import { getRouteById, pullRemoteRoutesAndMerge, getPublisherInfo, incrementViewCount, canViewPhone, makePhoneCall, deleteRoute, signUpRoute, isUserSignedUp, DifficultyConfig, RouteParticipant } from '../../utils/travel'
 import { getCurrentSession, getUserById, MemberLevelConfig, MemberLevel, checkModulePermission } from '../../utils/user'
 
 Page({
@@ -54,7 +54,12 @@ Page({
     this.loadRouteDetail()
   },
 
-  loadRouteDetail() {
+  async loadRouteDetail() {
+    try {
+      await pullRemoteRoutesAndMerge()
+    } catch {
+      // 离线时仍可读本地缓存
+    }
     const route = getRouteById(this.data.routeId)
     if (!route) {
       wx.showToast({

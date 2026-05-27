@@ -1,4 +1,4 @@
-import { getLogById, getPublisherInfo, incrementViewCount, toggleLike, addComment, deleteComment, deleteLog, toggleComments, TravelLog, TravelLogComment } from '../../utils/travellog'
+import { getLogById, pullRemoteLogsAndMerge, getPublisherInfo, incrementViewCount, toggleLike, addComment, deleteComment, deleteLog, toggleComments, TravelLog, TravelLogComment } from '../../utils/travellog'
 import { getCurrentSession, getUserById, MemberLevel, MemberLevelConfig } from '../../utils/user'
 
 Page({
@@ -37,7 +37,12 @@ Page({
     this.loadLog()
   },
 
-  loadLog() {
+  async loadLog() {
+    try {
+      await pullRemoteLogsAndMerge()
+    } catch {
+      // 离线时仍可读本地缓存
+    }
     const log = getLogById(this.data.logId)
     if (!log) {
       wx.showToast({
