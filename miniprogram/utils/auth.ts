@@ -2,6 +2,7 @@
  * 微信登录 / 手机号授权
  */
 import { API_CONFIG } from '../config/api'
+import { isRemoteApiEnabled, remoteRequest } from './cloud-request'
 
 const DEVICE_WECHAT_OPENID_KEY = 'device_wechat_openid'
 const DEVICE_BOUND_PHONE_KEY = 'device_bound_phone'
@@ -130,48 +131,37 @@ export interface ServerPhoneLoginRes {
 }
 
 export async function fetchWechatSession(wxCode: string): Promise<ServerWechatLoginRes | null> {
-  const base = API_CONFIG.auth?.baseUrl?.trim()
-  if (!base) return null
+  if (!isRemoteApiEnabled()) return null
 
-  return new Promise((resolve, reject) => {
-    wx.request({
-      url: `${base.replace(/\/$/, '')}/auth/wechat`,
-      method: 'POST',
-      data: { code: wxCode },
-      success: (res) => {
-        const data = res.data as { openId?: string; phone?: string }
-        if (res.statusCode === 200 && data?.openId) {
-          resolve({ openId: data.openId })
-        } else {
-          reject(new Error((data as { message?: string })?.message || '服务端微信登录失败'))
-        }
-      },
-      fail: () => reject(new Error('网络异常，请检查 auth.baseUrl 配置'))
-    })
-  })
+  const data = await remoteRequest<{ openId?: string; unionId?: string; message?: string }>(
+    '/auth/wechat',
+    'POST',
+    { code: wxCode }
+  )
+  if (data?.openId) {
+    return { openId: data.openId, unionId: data.unionId }
+  }
+  throw new Error(data?.message || '服务端微信登录失败')
 }
 
 export async function fetchPhoneNumber(
   phoneCode: string,
   _wxCode?: string
 ): Promise<ServerPhoneLoginRes | null> {
-  const base = API_CONFIG.auth?.baseUrl?.trim()
-  if (!base) return null
+  if (!isRemoteApiEnabled()) return null
 
-  return new Promise((resolve, reject) => {
-    wx.request({
-      url: `${base.replace(/\/$/, '')}/auth/phone`,
-      method: 'POST',
-      data: { code: phoneCode },
-      success: (res) => {
-        const data = res.data as { phone?: string; openId?: string; message?: string }
-        if (res.statusCode === 200 && data?.phone) {
-          resolve({ phone: data.phone, openId: data.openId })
-        } else {
-          reject(new Error(data?.message || '服务端解密手机号失败，请检查后台配置'))
-        }
-      },
-      fail: () => reject(new Error('网络异常，请检查 auth.baseUrl 配置'))
-    })
-  })
+  const data = await remoteRequest<{ phone?: string; openId?: string; message?: string }>(
+    '/auth/phone',
+    'POST',
+    { code: phoneCode }
+  )
+  if (data?.phone) {
+    return { phone: data.phone, openId: data.openId }
+  }
+  throw new Error(data?.message || '服务端解密手机号失败')
+}
+
+/** 是否已配置云端（云托管或 HTTPS） */
+export function hasRemoteAuth(): boolean {
+  return isRemoteApiEnabled()
 }

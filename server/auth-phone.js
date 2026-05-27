@@ -1,17 +1,11 @@
 /**
- * 小程序服务端：微信登录 / 手机号 / 用户库（多设备共享）
+ * AgShow API — 微信云托管 / 自建部署
  *
  * 环境变量：
- *   WX_APPID=小程序AppID
- *   WX_SECRET=小程序AppSecret
- *   PORT=3000
- *
- * 启动：node server/auth-phone.js
- * 小程序 miniprogram/config/api.ts：auth.baseUrl = 'https://你的域名'（需 HTTPS）
- *
- * 用户接口：
- *   GET  /api/users         获取全部用户
- *   POST /api/users/upsert  新增或更新用户
+ *   WX_APPID      小程序 AppID（云托管可自动注入）
+ *   WX_SECRET     小程序 AppSecret
+ *   PORT          监听端口，云托管默认 80
+ *   DATA_DIR      用户数据目录，默认 ./data
  */
 const http = require('http')
 const fs = require('fs')
@@ -19,7 +13,10 @@ const path = require('path')
 
 const APPID = process.env.WX_APPID || ''
 const SECRET = process.env.WX_SECRET || ''
-const PORT = Number(process.env.PORT || 3000)
+const PORT = Number(process.env.PORT || 80)
+const HOST = process.env.HOST || '0.0.0.0'
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data')
+const USERS_FILE = path.join(DATA_DIR, 'users.json')
 
 let accessToken = ''
 let tokenExpireAt = 0
@@ -63,7 +60,9 @@ async function getPhoneByCode(phoneCode) {
 function readBody(req) {
   return new Promise((resolve) => {
     let raw = ''
-    req.on('data', (chunk) => { raw += chunk })
+    req.on('data', (chunk) => {
+      raw += chunk
+    })
     req.on('end', () => {
       try {
         resolve(raw ? JSON.parse(raw) : {})
@@ -76,13 +75,15 @@ function readBody(req) {
 
 function send(res, status, data) {
   res.writeHead(status, {
-    'Content-Type': 'application/json',
+    'Content-Type': 'application/json; charset=utf-8',
     'Access-Control-Allow-Origin': '*'
   })
   res.end(JSON.stringify(data))
 }
 
-const USERS_FILE = path.join(__dirname, 'data', 'users.json')
+function getPathname(req) {
+  return (req.url || '/').split('?')[0]
+}
 
 function loadUserMap() {
   try {
@@ -95,7 +96,7 @@ function loadUserMap() {
 }
 
 function saveUserMap(map) {
-  fs.mkdirSync(path.dirname(USERS_FILE), { recursive: true })
+  fs.mkdirSync(DATA_DIR, { recursive: true })
   fs.writeFileSync(USERS_FILE, JSON.stringify(map, null, 2), 'utf8')
 }
 
@@ -119,53 +120,62 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type'
+      'Access-Control-Allow-Headers': 'Content-Type, X-WX-SERVICE'
     })
     res.end()
     return
   }
 
+  const pathname = getPathname(req)
+
   try {
+    if (pathname === '/' || pathname === '/health') {
+      send(res, 200, { ok: true, service: 'agshow-api' })
+      return
+    }
+
     const body = await readBody(req)
 
-    if (req.url === '/auth/wechat' && req.method === 'POST') {
+    if (pathname === '/auth/wechat' && req.method === 'POST') {
       const session = await code2Session(body.code)
       send(res, 200, { openId: session.openid, unionId: session.unionid })
       return
     }
 
-    if (req.url === '/auth/phone' && req.method === 'POST') {
+    if (pathname === '/auth/phone' && req.method === 'POST') {
       const phone = await getPhoneByCode(body.code)
       send(res, 200, { phone })
       return
     }
 
-    if (req.url === '/api/users' && req.method === 'GET') {
+    if (pathname === '/api/users' && req.method === 'GET') {
       send(res, 200, { users: listAllUsers() })
       return
     }
 
-    if (req.url === '/api/users/upsert' && req.method === 'POST') {
+    if (pathname === '/api/users/upsert' && req.method === 'POST') {
       const user = upsertUserInMap(body)
       send(res, 200, { user })
       return
     }
 
-    send(res, 404, { message: 'not found' })
+    send(res, 404, { message: 'not found', path: pathname })
   } catch (e) {
+    console.error('[api]', pathname, e)
     send(res, 500, { message: e.message || 'server error' })
   }
 })
 
 if (!APPID || !SECRET) {
-  console.warn('请设置环境变量 WX_APPID、WX_SECRET')
+  console.warn('[agshow-api] 请配置环境变量 WX_APPID、WX_SECRET')
 }
 
-server.listen(PORT, () => {
-  console.log(`Auth server http://127.0.0.1:${PORT}`)
-  console.log('  POST /auth/wechat       { code }')
-  console.log('  POST /auth/phone        { code }')
+server.listen(PORT, HOST, () => {
+  console.log(`[agshow-api] listening http://${HOST}:${PORT}`)
+  console.log('  GET  /health')
+  console.log('  POST /auth/wechat')
+  console.log('  POST /auth/phone')
   console.log('  GET  /api/users')
-  console.log('  POST /api/users/upsert  <User JSON>')
-  console.log(`  Users DB: ${USERS_FILE}`)
+  console.log('  POST /api/users/upsert')
+  console.log(`  Users: ${USERS_FILE}`)
 })

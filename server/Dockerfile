@@ -2,17 +2,18 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# 复制依赖文件
-COPY package*.json ./
-
-# 安装依赖
+COPY package.json ./
 RUN npm install --production
 
-# 复制源代码
-COPY . .
+COPY auth-phone.js ./
+COPY container.config.json ./
 
-# 暴露端口（云托管默认 80）
+RUN mkdir -p /app/data
+
+ENV PORT=80
+ENV HOST=0.0.0.0
+ENV DATA_DIR=/app/data
+
 EXPOSE 80
 
-# 启动服务
 CMD ["npm", "start"]

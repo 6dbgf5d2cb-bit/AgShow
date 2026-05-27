@@ -76,7 +76,7 @@
       <text class="empty-icon">👥</text>
       <text class="empty-text">暂无用户</text>
       <text wx:if="{{filterLevel}}" class="empty-hint">当前筛选等级下无用户，请点「全部」</text>
-      <text wx:elif="{{!cloudSyncEnabled}}" class="empty-hint">仅本机可见。多手机共享请在 config/api.ts 配置服务端并部署 server</text>
+      <text wx:elif="{{!cloudSyncEnabled}}" class="empty-hint">仅本机可见。请部署 server 到微信云托管并在 config/api.ts 开启 useCloudRun</text>
       <text wx:elif="{{totalUserCount <= 1}}" class="empty-hint">尚无远程用户，请让新用户微信登录后下拉刷新</text>
     </view>
 

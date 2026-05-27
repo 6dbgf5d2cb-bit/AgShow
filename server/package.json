@@ -1,0 +1,13 @@
+{
+  "name": "agshow-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AgShow 小程序后端：微信登录、用户库（微信云托管）",
+  "main": "auth-phone.js",
+  "scripts": {
+    "start": "node auth-phone.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

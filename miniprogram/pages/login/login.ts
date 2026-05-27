@@ -10,7 +10,7 @@ import {
   parsePhoneAuthError,
   isPhoneAuthSuccess
 } from '../../utils/auth'
-import { API_CONFIG } from '../../config/api'
+import { hasRemoteAuth } from '../../utils/auth'
 
 Page({
   data: {
@@ -75,10 +75,9 @@ Page({
       return
     }
 
-    const hasServer = !!API_CONFIG.auth?.baseUrl?.trim()
-    if (!hasServer) {
+    if (!hasRemoteAuth()) {
       this.setData({
-        privacyTip: '未配置服务端时，一键登录在真机需企业认证；模拟器请用「手机号登录」'
+        privacyTip: '未配置云托管时仅本机可见用户；请在 config/api.ts 开启 useCloudRun'
       })
     }
 
@@ -156,9 +155,7 @@ Page({
     try {
       let phone = ''
       let openId = getLocalWechatOpenId()
-      const hasServer = !!API_CONFIG.auth?.baseUrl?.trim()
-
-      if (hasServer) {
+      if (hasRemoteAuth()) {
         const server = await fetchPhoneNumber(phoneCode)
         if (server?.phone) {
           phone = server.phone
