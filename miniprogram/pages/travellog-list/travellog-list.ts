@@ -1,4 +1,5 @@
 import { getActiveLogs, pullRemoteLogsAndMerge, canPublishLog, deleteLog, TravelLog, getPublisherInfo } from '../../utils/travellog'
+import { applyResolvedUrl, resolveMediaUrlMap } from '../../utils/cloud-storage'
 import { getCurrentSession, getUserById } from '../../utils/user'
 import { MemberLevel, MemberLevelConfig } from '../../utils/user'
 
@@ -42,12 +43,16 @@ Page({
       wx.showToast({ title: '同步旅行记失败', icon: 'none', duration: 2000 })
     }
     const logs = getActiveLogs()
+    const mediaUrls = logs.flatMap((l) => (l.images || []).filter((u): u is string => !!u))
+    const resolved = await resolveMediaUrlMap(mediaUrls)
     const { selectedLogs } = this.data
 
     const logsWithPublisher = logs.map(log => {
+      const displayImages = (log.images || []).map((img) => applyResolvedUrl(img, resolved))
       const publisherInfo = getPublisherInfo(log.publisherId)
       return {
         ...log,
+        images: displayImages,
         publisherInfo: publisherInfo || { nickname: '未知用户', avatarUrl: '', memberLevel: 'normal' as MemberLevel, phone: '' },
         publisherLevelName: MemberLevelConfig[publisherInfo?.memberLevel as MemberLevel]?.name || '普通会员',
         publisherLevelColor: MemberLevelConfig[publisherInfo?.memberLevel as MemberLevel]?.color || '#999',

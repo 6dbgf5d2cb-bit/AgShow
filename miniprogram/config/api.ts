@@ -5,6 +5,9 @@ export const API_CONFIG = {
      * cloudEnv：必填！云开发「环境 ID」（不是环境名称）
      *   查看路径：微信公众平台 → 开发 → 云开发 → 设置 → 环境 ID（如 prod-abc123）
      * cloudService：云托管「服务名称」（服务列表里的名称，你当前为 express-m78v-002）
+     *
+     * 图片/视频上传使用同一 cloudEnv（云开发 → 存储）。
+     * 存储权限建议：所有用户可读，登录用户可写，否则他人看不到发布的图片。
      */
     useCloudRun: true,
     cloudService: 'express-m78v',

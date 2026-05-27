@@ -1,5 +1,6 @@
 import { createRoute, updateRoute, getRouteById, SeasonOptions, TagOptions, TravelRoute } from '../../utils/travel'
 import { getCurrentSession, checkModulePermission } from '../../utils/user'
+import { ensureCloudMediaUrl, ensureCloudMediaUrls } from '../../utils/cloud-storage'
 
 interface OptionWithState {
   value: string
@@ -207,7 +208,7 @@ Page({
     return true
   },
 
-  onSubmit() {
+  async onSubmit() {
     if (!this.validateForm()) return
 
     const session = getCurrentSession()
@@ -220,12 +221,18 @@ Page({
     }
 
     this.setData({ loading: true, errorMessage: '' })
+    wx.showLoading({ title: '上传图片中', mask: true })
 
     try {
+      const coverImage = this.data.coverImage
+        ? await ensureCloudMediaUrl(this.data.coverImage, 'travel/covers')
+        : ''
+      const images = await ensureCloudMediaUrls(this.data.images, 'travel/images')
+
       const waypoints = this.data.waypointsText
         .split('\n')
-        .map(w => w.trim())
-        .filter(w => w)
+        .map((w) => w.trim())
+        .filter((w) => w)
 
       const routeData = {
         title: this.data.title.trim(),
@@ -240,8 +247,8 @@ Page({
         bestSeason: this.data.selectedSeasons,
         tags: this.data.selectedTags,
         tips: this.data.tips.trim(),
-        coverImage: this.data.coverImage,
-        images: this.data.images
+        coverImage,
+        images
       }
 
       if (this.data.isEdit) {
@@ -263,12 +270,14 @@ Page({
       setTimeout(() => {
         wx.navigateBack()
       }, 1500)
-
     } catch (error: any) {
       this.setData({
         errorMessage: error.message || '发布失败',
         loading: false
       })
+    } finally {
+      wx.hideLoading()
+      this.setData({ loading: false })
     }
   },
 

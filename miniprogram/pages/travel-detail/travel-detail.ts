@@ -1,4 +1,5 @@
 import { getRouteById, pullRemoteRoutesAndMerge, getPublisherInfo, incrementViewCount, canViewPhone, makePhoneCall, deleteRoute, signUpRoute, isUserSignedUp, DifficultyConfig, RouteParticipant } from '../../utils/travel'
+import { applyResolvedUrl, resolveMediaUrlMap } from '../../utils/cloud-storage'
 import { getCurrentSession, getUserById, MemberLevelConfig, MemberLevel, checkModulePermission } from '../../utils/user'
 
 Page({
@@ -85,15 +86,19 @@ Page({
     const participantCount = participants.length
     const isFull = participantCount >= (route.maxParticipants || 10)
 
-    const galleryImages = (route.images || []).filter((url: string) => !!url)
+    const rawGallery = (route.images || []).filter((url: string) => !!url)
+    const mediaUrls = [route.coverImage, ...rawGallery].filter((u): u is string => !!u)
+    const resolved = await resolveMediaUrlMap(mediaUrls)
+    const coverImage = applyResolvedUrl(route.coverImage, resolved)
+    const galleryImages = rawGallery.map((url) => applyResolvedUrl(url, resolved))
     const previewUrls: string[] = []
-    if (route.coverImage) previewUrls.push(route.coverImage)
+    if (coverImage) previewUrls.push(coverImage)
     galleryImages.forEach((url: string) => {
       if (!previewUrls.includes(url)) previewUrls.push(url)
     })
 
     this.setData({
-      route,
+      route: { ...route, coverImage, images: galleryImages },
       galleryImages,
       previewUrls,
       publisherInfo: publisherInfo || { nickname: '未知用户', avatarUrl: '', memberLevel: 'normal', phone: '' },

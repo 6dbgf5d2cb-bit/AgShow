@@ -61,6 +61,17 @@ auth: {
 
 微信公众平台 → 开发 → 云开发 → 确认小程序已关联上述云环境。
 
+### 云存储（图片/视频共享）
+
+自驾游、旅行记、头像上传使用 **云开发 → 存储**（与 `cloudEnv` 相同环境）。
+
+**权限设置（必做）**：云开发控制台 → 存储 → 权限设置，建议：
+
+- **所有用户可读**（否则其他用户看不到 `cloud://` 图片）
+- **仅创建者可写** 或 **登录用户可写**
+
+发布内容时图片会先上传到 `agshow/travel/...`、`agshow/travellog/...`，再随内容 API 同步到云托管。
+
 ### 无需配置 request 域名
 
 使用 `wx.cloud.callContainer` 走云托管内网，**不用**在「服务器域名」里填业务域名。
@@ -103,6 +114,11 @@ baseUrl: 'http://127.0.0.1:3000'  // 开发者工具勾选「不校验合法域�
 | POST | `/auth/phone` | `{ code }` → `{ phone }` |
 | GET | `/api/users` | 全部用户列表 |
 | POST | `/api/users/upsert` | 注册/登录同步用户 |
+| POST | `/api/users/delete` | 删除用户 |
+| GET | `/api/travel/routes` | 自驾游线路列表 |
+| POST | `/api/travel/routes/upsert` | 发布/更新线路 |
+| GET | `/api/travel/logs` | 旅行记列表 |
+| POST | `/api/travel/logs/upsert` | 发布/更新旅行记 |
 
 ---
 

@@ -751,6 +751,24 @@ export async function loginWithWeChat(request: WeChatLoginRequest): Promise<User
   }
 
   finalizeUserLogin(user)
+
+  if (user.userId) {
+    await syncRemoteUserIntoRegistry(user.userId)
+    const fresh = getUserById(user.userId)
+    if (fresh) {
+      user = {
+        ...fresh,
+        nickname: request.nickname || fresh.nickname,
+        avatarUrl: request.avatarUrl || fresh.avatarUrl,
+        wechatOpenId: request.openId,
+        lastLoginIp: getCurrentIp(),
+        lastLoginTime: Date.now(),
+        loginFailCount: 0,
+        status: fresh.status === 'unactivated' ? 'normal' : fresh.status
+      }
+    }
+  }
+
   const savedUser = upsertUserInStorage(user)
 
   const currentSession = getCurrentSession()
@@ -810,7 +828,25 @@ export async function loginWithPhoneNumber(request: PhoneLoginRequest): Promise<
   }
 
   finalizeUserLogin(user)
-  return persistSession(user, true)
+
+  if (user.userId) {
+    await syncRemoteUserIntoRegistry(user.userId)
+    const fresh = getUserById(user.userId)
+    if (fresh) {
+      user = {
+        ...fresh,
+        phone: request.phone,
+        wechatOpenId: request.openId || fresh.wechatOpenId,
+        phoneVerifiedTime: Date.now(),
+        lastLoginIp: getCurrentIp(),
+        lastLoginTime: Date.now(),
+        loginFailCount: 0,
+        status: fresh.status === 'unactivated' ? 'normal' : fresh.status
+      }
+    }
+  }
+
+  return persistSession(upsertUserInStorage(user), true)
 }
 
 export async function login(request: LoginRequest): Promise<UserSession> {
@@ -853,7 +889,22 @@ export async function login(request: LoginRequest): Promise<UserSession> {
   }
 
   finalizeUserLogin(user)
-  return persistSession(user, !!request.rememberMe)
+
+  if (user.userId) {
+    await syncRemoteUserIntoRegistry(user.userId)
+    const fresh = getUserById(user.userId)
+    if (fresh) {
+      user = {
+        ...fresh,
+        lastLoginIp: getCurrentIp(),
+        lastLoginTime: Date.now(),
+        loginFailCount: 0,
+        status: fresh.status === 'unactivated' ? 'normal' : fresh.status
+      }
+    }
+  }
+
+  return persistSession(upsertUserInStorage(user), !!request.rememberMe)
 }
 
 export function logout(): void {
@@ -876,6 +927,57 @@ export function getCurrentSession(): UserSession | null {
   } catch {
     return null
   }
+}
+
+/** 用注册表最新资料刷新当前登录会话（等级、角色等） */
+export function refreshSessionFromRegistry(userId?: string): void {
+  const session = getCurrentSession()
+  if (!session) return
+
+  const id = userId || session.userId
+  if (!id || session.userId !== id) return
+
+  const user = getUserById(id)
+  if (!user) return
+
+  session.userInfo = {
+    userId: user.userId,
+    username: user.username,
+    nickname: user.nickname,
+    avatarUrl: user.avatarUrl,
+    memberLevel: user.memberLevel,
+    points: user.points,
+    status: user.status,
+    roles: user.roles
+  }
+  wx.setStorageSync(USER_STORAGE_KEY, JSON.stringify(session))
+}
+
+/** 从云端拉取指定用户并合并到本机注册表 */
+export async function syncRemoteUserIntoRegistry(userId: string): Promise<User | null> {
+  if (!userId) return null
+
+  if (isUserApiEnabled()) {
+    try {
+      const remoteUsers = await fetchRemoteUsers()
+      const remote = remoteUsers.find((u) => u.userId === userId)
+      if (remote) {
+        mergeUsersIntoLocalRegistry([remote])
+      }
+    } catch (e) {
+      console.warn('[user] syncRemoteUserIntoRegistry failed', e)
+    }
+  }
+
+  refreshSessionFromRegistry(userId)
+  return getUserById(userId)
+}
+
+/** 同步当前登录用户：云端等级/角色 → 本地注册表 → 刷新 session */
+export async function syncCurrentUserFromRemote(): Promise<User | null> {
+  const session = getCurrentSession()
+  if (!session?.userId) return null
+  return syncRemoteUserIntoRegistry(session.userId)
 }
 
 /** 若当前登录会话中的用户不在注册表，则补写入（防止仅 session 无列表记录） */
@@ -916,15 +1018,8 @@ export async function updateUser(userId: string, updates: Partial<User>): Promis
     console.warn('[user] updateUser remote sync failed', e)
   }
 
-  const session = getCurrentSession()
-  if (session && session.userId === userId) {
-    session.userInfo = {
-      ...session.userInfo,
-      ...updates,
-      roles: saved.roles,
-      memberLevel: saved.memberLevel
-    }
-    wx.setStorageSync(USER_STORAGE_KEY, JSON.stringify(session))
+  if (getCurrentSession()?.userId === userId) {
+    refreshSessionFromRegistry(userId)
   }
 
   return saved
@@ -1169,13 +1264,8 @@ export async function batchUpdateRole(
 
     if (!nextRoles) continue
 
-    const saved = upsertUserInStorage({ ...user, roles: nextRoles })
-    try {
-      await pushUserAndWait(saved)
-    } catch (e) {
-      console.warn('[user] batchUpdateRole remote sync failed', e)
-    }
-    count++
+    const saved = await updateUser(userId, { roles: nextRoles })
+    if (saved) count++
   }
 
   return count
@@ -1188,16 +1278,8 @@ export async function batchUpdateMemberLevel(
   let count = 0
 
   for (const userId of userIds) {
-    const user = getUserById(userId)
-    if (!user) continue
-
-    const saved = upsertUserInStorage({ ...user, memberLevel: level })
-    try {
-      await pushUserAndWait(saved)
-    } catch (e) {
-      console.warn('[user] batchUpdateMemberLevel remote sync failed', e)
-    }
-    count++
+    const saved = await updateUser(userId, { memberLevel: level })
+    if (saved) count++
   }
 
   return count

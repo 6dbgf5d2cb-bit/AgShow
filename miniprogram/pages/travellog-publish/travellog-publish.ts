@@ -1,5 +1,6 @@
 import { createLog, canPublishLog, getLogById, updateLog, TravelLog } from '../../utils/travellog'
 import { getCurrentSession } from '../../utils/user'
+import { ensureCloudMediaUrls } from '../../utils/cloud-storage'
 
 Page({
   data: {
@@ -164,20 +165,21 @@ Page({
       return
     }
 
-    console.log('onPublish: session userId:', session.userId)
     this.setData({ loading: true, errorMessage: '' })
+    wx.showLoading({ title: '上传媒体中', mask: true })
 
     try {
+      const images = await ensureCloudMediaUrls(this.data.images, 'travellog/images')
+      const videos = await ensureCloudMediaUrls(this.data.videos, 'travellog/videos')
+
       const tagArray = this.data.tags.split(',').map(t => t.trim()).filter(t => t)
-      console.log('onPublish: tags:', tagArray)
-      
+
       if (this.data.isEdit) {
-        console.log('onPublish: updating log:', this.data.logId)
         const result = updateLog(this.data.logId, {
           title: this.data.title.trim(),
           content: this.data.content.trim(),
-          images: this.data.images,
-          videos: this.data.videos,
+          images,
+          videos,
           tags: tagArray,
           location: this.data.location.trim() || undefined,
           allowComments: this.data.allowComments,
@@ -185,7 +187,6 @@ Page({
         })
 
         if (result) {
-          console.log('onPublish: update successful')
           wx.showToast({
             title: '更新成功',
             icon: 'success',
@@ -195,46 +196,40 @@ Page({
             wx.navigateBack()
           }, 1500)
         } else {
-          console.log('onPublish: update failed')
           this.setData({ errorMessage: '更新失败，请重试', loading: false })
         }
       } else {
-        console.log('onPublish: creating new log')
         const result = createLog(session.userId, {
           title: this.data.title.trim(),
           content: this.data.content.trim(),
-          images: this.data.images,
-          videos: this.data.videos,
+          images,
+          videos,
           tags: tagArray,
           location: this.data.location.trim() || undefined,
           allowComments: this.data.allowComments
         })
 
         if (result) {
-          console.log('onPublish: create successful, logId:', result.logId)
-          
-          // 强制等待存储写入完成
+          wx.showToast({
+            title: '发布成功',
+            icon: 'success',
+            duration: 1500
+          })
           setTimeout(() => {
-            wx.showToast({
-              title: '发布成功',
-              icon: 'success',
-              duration: 1500
-            })
-            setTimeout(() => {
-              wx.navigateBack()
-            }, 1500)
-          }, 200)
+            wx.navigateBack()
+          }, 1500)
         } else {
-          console.log('onPublish: create failed')
           this.setData({ errorMessage: '发布失败，请重试', loading: false })
         }
       }
     } catch (error: any) {
-      console.error('onPublish: exception:', error)
       this.setData({
         errorMessage: error.message || '操作失败',
         loading: false
       })
+    } finally {
+      wx.hideLoading()
+      this.setData({ loading: false })
     }
   },
 

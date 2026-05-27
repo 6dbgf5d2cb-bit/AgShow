@@ -1,4 +1,5 @@
 import { getActiveRoutes, pullRemoteRoutesAndMerge, DifficultyConfig, canPublishRoute } from '../../utils/travel'
+import { applyResolvedUrl, resolveMediaUrlMap } from '../../utils/cloud-storage'
 import { getCurrentSession } from '../../utils/user'
 
 Page({
@@ -27,9 +28,18 @@ Page({
       wx.showToast({ title: '同步线路失败', icon: 'none', duration: 2000 })
     }
     const routes = getActiveRoutes()
+    const mediaUrls = routes.flatMap((r) =>
+      [r.coverImage, ...(r.images || [])].filter((u): u is string => !!u)
+    )
+    const resolved = await resolveMediaUrlMap(mediaUrls)
+    const displayRoutes = routes.map((r) => ({
+      ...r,
+      coverImage: applyResolvedUrl(r.coverImage, resolved),
+      images: (r.images || []).map((img) => applyResolvedUrl(img, resolved))
+    }))
     this.setData({
-      routes,
-      filteredRoutes: routes
+      routes: displayRoutes,
+      filteredRoutes: displayRoutes
     })
   },
 

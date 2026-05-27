@@ -1,4 +1,17 @@
-import { getCurrentSession, logout, getUserById, MemberLevelConfig, AccountStatusConfig, RoleConfig, addPoints, checkModulePermission, User, MemberLevel, UserRole } from '../../utils/user'
+import {
+  getCurrentSession,
+  logout,
+  getUserById,
+  syncCurrentUserFromRemote,
+  MemberLevelConfig,
+  AccountStatusConfig,
+  RoleConfig,
+  addPoints,
+  checkModulePermission,
+  User,
+  MemberLevel,
+  UserRole
+} from '../../utils/user'
 
 interface MenuItem {
   id: string
@@ -33,8 +46,10 @@ Page({
   },
 
   async loadUserInfo() {
+    await syncCurrentUserFromRemote()
+
     const session = getCurrentSession()
-    
+
     if (!session) {
       wx.redirectTo({
         url: '/pages/login/login'
@@ -42,24 +57,24 @@ Page({
       return
     }
 
-    const userInfo = session.userInfo
     const fullUser = getUserById(session.userId)
-    
-    const memberLevel = userInfo.memberLevel || 'normal'
-    const status = userInfo.status || 'normal'
-    const roles = userInfo.roles || ['member']
+    const userInfo = session.userInfo
+
+    const memberLevel = fullUser?.memberLevel || userInfo.memberLevel || 'normal'
+    const status = fullUser?.status || userInfo.status || 'normal'
+    const roles = fullUser?.roles || userInfo.roles || ['member']
 
     this.setData({
       userInfo: userInfo,
       fullUser: fullUser,
       isAdmin: roles.includes('admin'),
       headerBgColor: MemberLevelConfig[memberLevel]?.color || '#667eea',
-      avatarUrl: userInfo.avatarUrl || '',
-      nickname: userInfo.nickname || '',
+      avatarUrl: fullUser?.avatarUrl || userInfo.avatarUrl || '',
+      nickname: fullUser?.nickname || userInfo.nickname || '',
       levelColor: MemberLevelConfig[memberLevel]?.color || '#999999',
       levelName: MemberLevelConfig[memberLevel]?.name || '普通会员',
-      username: userInfo.username || '',
-      points: userInfo.points || 0,
+      username: fullUser?.username || userInfo.username || '',
+      points: fullUser?.points ?? userInfo.points ?? 0,
       statusColor: AccountStatusConfig[status]?.color || '#52c41a',
       statusName: AccountStatusConfig[status]?.name || '正常',
       roleNames: roles.map(r => RoleConfig[r].name).join('、'),
@@ -274,10 +289,10 @@ Page({
   },
 
   onLoad() {
-    this.loadUserInfo()
+    void this.loadUserInfo()
   },
 
   onShow() {
-    this.loadUserInfo()
+    void this.loadUserInfo()
   }
 })

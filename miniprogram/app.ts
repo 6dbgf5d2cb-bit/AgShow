@@ -1,4 +1,9 @@
-import { getCurrentSession, syncSessionUserToRegistry, repairDefaultMemberPermissions } from './utils/user'
+import {
+  getCurrentSession,
+  syncSessionUserToRegistry,
+  repairDefaultMemberPermissions,
+  syncCurrentUserFromRemote
+} from './utils/user'
 import { getRequiredCloudEnvId, isCloudRunEnabled } from './utils/cloud-request'
 
 App<IAppOption>({
@@ -22,6 +27,7 @@ App<IAppOption>({
 
     repairDefaultMemberPermissions()
     syncSessionUserToRegistry()
+    void syncCurrentUserFromRemote()
 
     const session = getCurrentSession()
     if (session) {
@@ -31,6 +37,7 @@ App<IAppOption>({
     }
   },
   onShow() {
+    void syncCurrentUserFromRemote()
     const session = getCurrentSession()
     const pages = getCurrentPages()
     const currentPage = pages[pages.length - 1]

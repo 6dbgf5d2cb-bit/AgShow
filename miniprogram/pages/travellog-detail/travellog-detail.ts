@@ -1,4 +1,5 @@
 import { getLogById, pullRemoteLogsAndMerge, getPublisherInfo, incrementViewCount, toggleLike, addComment, deleteComment, deleteLog, toggleComments, TravelLog, TravelLogComment } from '../../utils/travellog'
+import { applyResolvedUrl, resolveMediaUrlMap } from '../../utils/cloud-storage'
 import { getCurrentSession, getUserById, MemberLevel, MemberLevelConfig } from '../../utils/user'
 
 Page({
@@ -68,8 +69,16 @@ Page({
     const likes = wx.getStorageSync(likesKey) || []
     const liked = session ? likes.includes(session.userId) : false
 
+    const mediaUrls = [...(log.images || []), ...(log.videos || [])].filter((u): u is string => !!u)
+    const resolved = await resolveMediaUrlMap(mediaUrls)
+    const displayLog = {
+      ...log,
+      images: (log.images || []).map((img) => applyResolvedUrl(img, resolved)),
+      videos: (log.videos || []).map((v) => applyResolvedUrl(v, resolved))
+    }
+
     this.setData({
-      log,
+      log: displayLog,
       publisherInfo: publisherInfo || { nickname: '未知用户', avatarUrl: '', memberLevel: 'normal', phone: '' },
       canViewPhone: canView,
       publisherLevelName: MemberLevelConfig[publisherInfo?.memberLevel as MemberLevel]?.name || '普通会员',
