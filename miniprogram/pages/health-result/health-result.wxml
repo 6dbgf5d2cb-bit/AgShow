@@ -1,11 +1,5 @@
 <view class="container">
-  <view class="header">
-    <view class="back-btn" bindtap="goBack">
-      <text>←</text>
-    </view>
-    <text class="title">{{resultType === 'bazi' ? '八字排盘' : '中医诊断'}}</text>
-    <view class="placeholder"></view>
-  </view>
+  <page-header bind:back="goBack" title="{{resultType === 'bazi' ? '八字排盘' : '中医诊断'}}" />
 
   <scroll-view class="content" scroll-y>
     <view wx:if="{{resultType === 'bazi'}}" class="result-section">

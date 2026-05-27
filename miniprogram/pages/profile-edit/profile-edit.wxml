@@ -1,11 +1,5 @@
 <view class="container">
-  <view class="header">
-    <view class="back-btn" bindtap="goBack">
-      <text>←</text>
-    </view>
-    <text class="title">编辑个人资料</text>
-    <view class="header-placeholder"></view>
-  </view>
+  <page-header bind:back="goBack" title="编辑个人资料" />
 
   <scroll-view scroll-y class="form-section">
     <view class="avatar-section">

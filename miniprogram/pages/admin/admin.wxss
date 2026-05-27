@@ -4,12 +4,7 @@
   padding-bottom: 120rpx;
 }
 
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 60rpx 32rpx 40rpx;
-}
+/* 顶栏由 page-header 组件承担 */
 
 .header .title {
   font-size: 40rpx;

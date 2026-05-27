@@ -1,4 +1,5 @@
 <view class="container">
+  <page-header theme="light" title="" showBack="{{true}}" />
   <view class="logo-section">
     <view class="logo">
       <text class="logo-text">AgShow</text>

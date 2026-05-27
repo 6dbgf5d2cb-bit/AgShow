@@ -4,7 +4,7 @@
 }
 
 .header {
-  padding: 60rpx 32rpx 40rpx;
+  padding: 0 0 40rpx;
   color: #fff;
 }
 

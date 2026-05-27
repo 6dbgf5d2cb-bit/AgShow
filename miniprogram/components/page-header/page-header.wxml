@@ -1,0 +1,15 @@
+<view class="page-header page-header--{{theme}} {{fixed ? 'page-header--fixed' : ''}}">
+  <view class="page-header__row">
+    <view wx:if="{{showBack}}" class="page-back-btn" bindtap="onBackTap" hover-class="page-back-btn--active">
+      <text class="page-back-btn__arrow">←</text>
+    </view>
+    <view wx:else class="page-back-btn page-back-btn--placeholder"></view>
+    <view class="page-header__center">
+      <text wx:if="{{title}}" class="page-header__title">{{title}}</text>
+      <slot wx:else name="title"></slot>
+    </view>
+    <view class="page-header__right">
+      <slot name="right"></slot>
+    </view>
+  </view>
+</view>

@@ -25,6 +25,9 @@
     "navigationBarTextStyle": "black",
     "navigationStyle": "custom"
   },
+  "usingComponents": {
+    "page-header": "/components/page-header/page-header"
+  },
   "style": "v2",
   "sitemapLocation": "sitemap.json",
   "lazyCodeLoading": "requiredComponents",

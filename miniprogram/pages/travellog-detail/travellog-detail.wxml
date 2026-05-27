@@ -1,19 +1,11 @@
 <view wx:if="{{log}}" class="container">
-  <view class="header">
-    <view class="header-left" bindtap="goBack">
-      <text class="back-icon">←</text>
-    </view>
-    
-    <view class="header-center">
-      <text class="header-title">旅行记详情</text>
-    </view>
-    
-    <view class="header-right">
+  <page-header bind:back="goBack" title="旅行记详情">
+    <view slot="right">
       <view wx:if="{{isPublisher || isAdmin}}" class="comment-toggle" bindtap="toggleComments">
         <text>{{allowComments ? '🔒' : '🔓'}}</text>
       </view>
     </view>
-  </view>
+  </page-header>
 
   <view class="action-bar">
     <view class="action-left"></view>

@@ -1,11 +1,5 @@
 <view class="container">
-  <view class="header">
-    <view class="back-btn" bindtap="goBack">
-      <text>←</text>
-    </view>
-    <text class="title">模块管理</text>
-    <view class="placeholder"></view>
-  </view>
+  <page-header bind:back="goBack" title="模块管理" />
 
   <scroll-view class="module-scroll" scroll-y>
     <view wx:for="{{modules}}" wx:key="id" class="module-card">

@@ -4,8 +4,40 @@ page {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  /* 水平边距：右侧比左侧多两列（64rpx），整体内容略向左收 */
+  --page-pad-left: 32rpx;
+  --page-pad-right: 96rpx;
+  /* 顶栏：状态栏 + 下移约两行，避免返回键与状态栏重叠 */
+  --page-header-top: calc(env(safe-area-inset-top) + 88rpx);
 }
 
-view, text, input, button {
+view,
+text,
+input,
+button {
   box-sizing: border-box;
+}
+
+/* 页面根容器：左侧 32rpx，右侧 96rpx（向左收两列） */
+.container {
+  padding-left: var(--page-pad-left);
+  padding-right: var(--page-pad-right);
+}
+
+/* 未使用 page-header 组件的旧顶栏 */
+.container > .header {
+  padding-top: var(--page-header-top);
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.container > .header .back-btn {
+  position: static;
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 44rpx;
+  color: #333;
 }

@@ -1,11 +1,5 @@
 <view class="container">
-  <view class="header">
-    <view class="back-btn" bindtap="goBack">
-      <text>←</text>
-    </view>
-    <text class="title">{{isEdit ? '编辑线路' : '发布线路'}}</text>
-    <view class="placeholder"></view>
-  </view>
+  <page-header bind:back="goBack" title="{{isEdit ? '编辑线路' : '发布线路'}}" />
 
   <scroll-view class="form-scroll" scroll-y>
     <view class="form-section">

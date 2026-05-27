@@ -1,17 +1,13 @@
 <wxs module="utils" src="./role-management.wxs"></wxs>
 <view class="container">
-  <view class="header">
-    <view class="back-btn" bindtap="goBack">
-      <text>←</text>
-    </view>
-    <view class="header-center">
-      <text class="title">角色权限管理</text>
+  <page-header bind:back="goBack">
+    <view slot="title" class="role-header-center">
+      <text class="page-header__title">角色权限管理</text>
       <view class="action-btn" bindtap="showAddRoleModal">
         <text>+ 添加角色</text>
       </view>
     </view>
-    <view class="placeholder"></view>
-  </view>
+  </page-header>
 
   <view class="role-section">
     <view class="section-header">

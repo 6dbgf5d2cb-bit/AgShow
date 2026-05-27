@@ -1,17 +1,16 @@
 <wxs module="utils" src="./user-management.wxs"></wxs>
 <view class="container">
-  <view class="header">
-    <view class="back-btn" bindtap="goBack">
-      <text>←</text>
+  <page-header bind:back="goBack">
+    <view slot="title" class="user-mgmt-title-row">
+      <text class="page-header__title">用户管理 ({{totalUserCount}})</text>
+      <text wx:if="{{cloudSyncEnabled}}" class="cloud-badge">云端</text>
     </view>
-    <text class="title">用户管理 ({{totalUserCount}})</text>
-    <text wx:if="{{cloudSyncEnabled}}" class="cloud-badge">云端</text>
-    <view class="header-actions">
+    <view slot="right" class="header-actions">
       <view class="action-btn" bindtap="showBatchAddModal">
         <text>+ 批量添加</text>
       </view>
     </view>
-  </view>
+  </page-header>
 
   <view class="toolbar">
     <view class="select-all" bindtap="toggleSelectAll">

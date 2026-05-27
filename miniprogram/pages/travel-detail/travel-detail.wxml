@@ -1,11 +1,5 @@
 <view class="container">
-  <view class="header">
-    <view class="back-btn" bindtap="goBack">
-      <text>←</text>
-    </view>
-    <text class="title">线路详情</text>
-    <view class="placeholder"></view>
-  </view>
+  <page-header bind:back="goBack" title="线路详情" />
 
   <scroll-view class="detail-scroll" scroll-y>
     <view class="cover-section">

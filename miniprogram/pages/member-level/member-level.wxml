@@ -1,11 +1,5 @@
 <view class="container">
-  <view class="header">
-    <view class="back-btn" bindtap="goBack">
-      <text>←</text>
-    </view>
-    <text class="title">会员等级管理</text>
-    <view class="placeholder"></view>
-  </view>
+  <page-header bind:back="goBack" title="会员等级管理" />
 
   <scroll-view class="content" scroll-y>
     <view class="level-list">

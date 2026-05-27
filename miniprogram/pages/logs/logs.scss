@@ -6,6 +6,8 @@ page {
 .scrollarea {
   flex: 1;
   overflow-y: hidden;
+  padding-left: var(--page-pad-left, 32rpx);
+  padding-right: var(--page-pad-right, 96rpx);
 }
 .log-item {
   margin-top: 20rpx;

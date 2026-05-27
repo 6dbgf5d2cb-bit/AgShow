@@ -1,7 +1,5 @@
 <view class="container">
-  <view class="header">
-    <text class="title">旅行记</text>
-  </view>
+  <page-header title="旅行记" />
 
   <view class="action-bar">
     <view class="action-left">

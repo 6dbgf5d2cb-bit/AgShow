@@ -9,29 +9,13 @@ page {
   flex-direction: column;
 }
 
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 24rpx 32rpx;
-  padding-top: calc(env(safe-area-inset-top) + 24rpx);
-  background: #fff;
-}
-
-.back-btn {
-  width: 64rpx;
-  height: 64rpx;
+.user-mgmt-title-row {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 40rpx;
-  color: #333;
-}
-
-.title {
-  font-size: 34rpx;
-  font-weight: bold;
-  color: #333;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  width: 100%;
 }
 
 .cloud-badge {

@@ -1,12 +1,7 @@
 <wxs module="utils" src="./health-detection.wxs"></wxs>
 
 <view class="container">
-  <view class="header">
-    <view class="back-btn" bindtap="goBack">
-      <text>←</text>
-    </view>
-    <text class="title">健康检测</text>
-  </view>
+  <page-header theme="light" title="健康检测" />
 
   <view class="main-content">
     <view class="tab-bar">

@@ -1,11 +1,5 @@
 <view class="container">
-  <view class="header">
-    <view class="back-btn" bindtap="goToLogin">
-      <text>←</text>
-    </view>
-    <text class="title">注册会员</text>
-    <view class="placeholder"></view>
-  </view>
+  <page-header bind:back="goToLogin" title="注册会员" />
 
   <scroll-view class="form-scroll" scroll-y>
     <view class="form-section">

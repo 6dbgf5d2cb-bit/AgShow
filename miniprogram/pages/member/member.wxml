@@ -1,4 +1,5 @@
 <view class="container">
+  <page-header theme="light" title="会员中心" />
   <view class="header" style="background:{{headerBgColor}}">
     <view class="user-card">
       <image class="avatar" src="{{avatarUrl}}" mode="aspectFill" />

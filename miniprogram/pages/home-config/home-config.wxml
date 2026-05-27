@@ -1,12 +1,6 @@
 <wxs module="utils" src="./home-config.wxs"></wxs>
 <view class="container">
-  <view class="header">
-    <view class="back-btn" bindtap="goBack">
-      <text>←</text>
-    </view>
-    <text class="title">首页配置管理</text>
-    <view class="placeholder"></view>
-  </view>
+  <page-header bind:back="goBack" title="首页配置管理" />
 
   <view class="config-section">
     <view class="section-header">

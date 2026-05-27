@@ -6,39 +6,7 @@
   height: 100vh;
 }
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 60rpx 20rpx 20rpx;
-  background-color: #fff;
-}
-
-.header-left {
-  width: 80rpx;
-}
-
-.back-icon {
-  font-size: 40rpx;
-  color: #333;
-}
-
-.header-center {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-}
-
-.header-title {
-  font-size: 36rpx;
-  font-weight: bold;
-  color: #333;
-}
-
-.header-right {
-  width: 80rpx;
-  text-align: right;
-}
+/* 顶栏由 page-header 组件承担 */
 
 .comment-toggle {
   font-size: 32rpx;

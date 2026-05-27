@@ -1,13 +1,7 @@
 <view class="container">
-  <view class="header">
-    <view class="header-left" bindtap="goBack">
-      <text class="back-icon">←</text>
-    </view>
-    <text class="header-title">{{isEdit ? '编辑旅行记' : '发布旅行记'}}</text>
-    <view class="header-right"></view>
-  </view>
+  <page-header fixed bind:back="goBack" title="{{isEdit ? '编辑旅行记' : '发布旅行记'}}" />
 
-  <scroll-view scroll-y class="content">
+  <scroll-view scroll-y class="content content--with-fixed-header">
     <view wx:if="{{errorMessage}}" class="error-message">
       <text>{{errorMessage}}</text>
     </view>
