@@ -3,6 +3,7 @@ import {
   pullRemoteUsersAndMerge,
   isUserApiEnabled,
   deleteUsers,
+  setUserRoles,
   batchUpdateRole,
   batchUpdateMemberLevel,
   batchAddUsers,
@@ -226,23 +227,34 @@ Page({
     this.setData({ showDeleteModal: false })
   },
 
-  confirmDelete() {
+  async confirmDelete() {
     const { selectedUsers } = this.data
-    
-    const deletedCount = deleteUsers(selectedUsers)
-    
-    wx.showToast({
-      title: `删除成功，共删除 ${deletedCount} 个用户`,
-      icon: 'success',
-      duration: 1500
-    })
 
-    this.setData({
-      showDeleteModal: false,
-      selectedUsers: []
-    })
-    
-    this.loadUsers()
+    try {
+      const deletedCount = await deleteUsers(selectedUsers)
+      if (deletedCount === 0) {
+        wx.showToast({ title: '未删除任何用户', icon: 'none' })
+        return
+      }
+      wx.showToast({
+        title: `删除成功，共删除 ${deletedCount} 个用户`,
+        icon: 'success',
+        duration: 1500
+      })
+      this.setData({
+        showDeleteModal: false,
+        selectedUsers: []
+      })
+      this.loadUsers()
+    } catch (e) {
+      console.error('[user-management] delete failed', e)
+      wx.showToast({
+        title: '删除失败，请检查云托管连接',
+        icon: 'none',
+        duration: 2500
+      })
+      this.loadUsers()
+    }
   },
 
   showRoleModal() {
@@ -262,8 +274,11 @@ Page({
     this.setData({ selectedRole: e.currentTarget.dataset.value })
   },
 
-  setRoleAction(action: 'add' | 'remove') {
-    this.setData({ roleAction: action })
+  setRoleAction(e: WechatMiniprogram.TouchEvent) {
+    const action = e.currentTarget.dataset.action as 'add' | 'remove'
+    if (action === 'add' || action === 'remove') {
+      this.setData({ roleAction: action })
+    }
   },
 
   confirmRoleChange() {
@@ -344,11 +359,13 @@ Page({
 
   confirmSingleUserRoleChange() {
     const { currentUserId, currentUserRoles } = this.data
-    
-    Object.keys(RoleConfig).forEach(role => {
-      batchUpdateRole([currentUserId], role as UserRole, currentUserRoles.includes(role))
-    })
-    
+
+    const saved = setUserRoles(currentUserId, currentUserRoles as UserRole[])
+    if (!saved) {
+      wx.showToast({ title: '用户不存在', icon: 'none' })
+      return
+    }
+
     wx.showToast({
       title: '角色授权成功',
       icon: 'success',
@@ -358,7 +375,7 @@ Page({
     this.setData({
       showSingleUserRoleModal: false
     })
-    
+
     this.loadUsers()
   },
 

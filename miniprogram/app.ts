@@ -1,4 +1,4 @@
-import { getCurrentSession, syncSessionUserToRegistry } from './utils/user'
+import { getCurrentSession, syncSessionUserToRegistry, repairDefaultMemberPermissions } from './utils/user'
 import { getRequiredCloudEnvId, isCloudRunEnabled } from './utils/cloud-request'
 
 App<IAppOption>({
@@ -20,6 +20,7 @@ App<IAppOption>({
     logs.unshift(Date.now())
     wx.setStorageSync('logs', logs)
 
+    repairDefaultMemberPermissions()
     syncSessionUserToRegistry()
 
     const session = getCurrentSession()

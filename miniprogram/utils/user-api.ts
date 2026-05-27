@@ -19,3 +19,10 @@ export async function pushUserToRemote(user: User): Promise<User> {
   const res = await remoteRequest<{ user: User }>('/api/users/upsert', 'POST', user)
   return res.user || user
 }
+
+/** 从服务端删除用户 */
+export async function deleteRemoteUsers(userIds: string[]): Promise<number> {
+  if (!userIds.length) return 0
+  const res = await remoteRequest<{ deleted: number }>('/api/users/delete', 'POST', { userIds })
+  return res.deleted ?? userIds.length
+}

@@ -7,7 +7,7 @@ export const API_CONFIG = {
      * cloudService：云托管「服务名称」（服务列表里的名称，你当前为 express-m78v-002）
      */
     useCloudRun: true,
-    cloudService: 'express-m78v-002',
+    cloudService: 'express-m78v',
     cloudEnv: 'prod-d7g5aexo529d6be22', // ← 请填写你的环境 ID，例如 'prod-xxxxxx'
 
     /** 自建 HTTPS（useCloudRun 为 false 时使用） */

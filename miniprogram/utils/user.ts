@@ -1,4 +1,4 @@
-import { isUserApiEnabled, fetchRemoteUsers, pushUserToRemote } from './user-api'
+import { isUserApiEnabled, fetchRemoteUsers, pushUserToRemote, deleteRemoteUsers } from './user-api'
 
 export type MemberLevel = 'normal' | 'gold' | 'vip' | 'premium'
 
@@ -39,6 +39,7 @@ export interface User {
   wechatOpenId?: string
   googleSub?: string
   roles: UserRole[]
+  updatedAt?: number
 }
 
 export interface LoginRequest {
@@ -164,7 +165,8 @@ function normalizeStoredUser(raw: Partial<User>): User {
     referrerId: raw.referrerId,
     wechatOpenId: raw.wechatOpenId,
     googleSub: raw.googleSub,
-    roles
+    roles,
+    updatedAt: raw.updatedAt || raw.registerTime || now
   }
 }
 
@@ -197,8 +199,32 @@ function appendUserWal(userId: string): void {
   }
 }
 
+function removeUserRecord(userId: string): void {
+  if (!userId) return
+  wx.removeStorageSync(USER_RECORD_PREFIX + userId)
+  const wal: string[] = wx.getStorageSync(USER_WAL_KEY) || []
+  const nextWal = wal.filter((id) => id !== userId)
+  if (nextWal.length !== wal.length) {
+    wx.setStorageSync(USER_WAL_KEY, nextWal)
+  }
+}
+
+function removeUsersFromRegistryLocal(userIds: string[]): number {
+  if (!userIds.length) return 0
+
+  const idSet = new Set(userIds)
+  let users = readAllUsersFromRegistry()
+  const before = users.length
+  users = users.filter((u) => !idSet.has(u.userId))
+
+  userIds.forEach((id) => removeUserRecord(id))
+  saveMockUsers(users)
+
+  return before - users.length
+}
+
 function saveUserRecord(user: User): User {
-  const normalized = normalizeStoredUser(user)
+  const normalized = normalizeStoredUser({ ...user, updatedAt: Date.now() })
   const key = USER_RECORD_PREFIX + normalized.userId
   wx.setStorageSync(key, JSON.stringify(normalized))
   appendUserWal(normalized.userId)
@@ -840,21 +866,29 @@ export function getUserById(userId: string): User | null {
 }
 
 export function updateUser(userId: string, updates: Partial<User>): User | null {
-  const users = getMockUsers()
-  const index = users.findIndex(u => u.userId === userId)
-  
-  if (index === -1) return null
-  
-  users[index] = { ...users[index], ...updates }
-  saveMockUsers(users)
-  
+  const user = getUserById(userId)
+  if (!user) return null
+
+  const saved = upsertUserInStorage({ ...user, ...updates })
+
   const session = getCurrentSession()
   if (session && session.userId === userId) {
-    session.userInfo = { ...session.userInfo, ...updates }
+    session.userInfo = {
+      ...session.userInfo,
+      ...updates,
+      roles: saved.roles,
+      memberLevel: saved.memberLevel
+    }
     wx.setStorageSync(USER_STORAGE_KEY, JSON.stringify(session))
   }
-  
-  return users[index]
+
+  return saved
+}
+
+/** 直接设置用户角色列表 */
+export function setUserRoles(userId: string, roles: UserRole[]): User | null {
+  const safeRoles = roles.length > 0 ? roles : ['member']
+  return updateUser(userId, { roles: safeRoles })
 }
 
 export function updatePassword(userId: string, oldPassword: string, newPassword: string): boolean {
@@ -978,16 +1012,25 @@ export function getAllUsers(): User[] {
     .sort((a, b) => (b.registerTime || 0) - (a.registerTime || 0))
 }
 
-/** 将服务端用户合并到本机（管理后台跨设备查看用） */
+function userRevision(user: Partial<User>): number {
+  return user.updatedAt || user.registerTime || 0
+}
+
+/** 将服务端用户合并到本机（较新的 updatedAt 优先，避免覆盖刚做的管理操作） */
 export function mergeUsersIntoLocalRegistry(remoteUsers: User[]): User[] {
   for (const raw of remoteUsers) {
     const users = readAllUsersFromRegistry()
     const normalized = normalizeStoredUser(raw)
     const index = findUserIndexInList(users, normalized)
+
     if (index < 0) {
       saveUserRecord(normalized)
-    } else {
-      saveUserRecord(normalizeStoredUser({ ...users[index], ...normalized }))
+      continue
+    }
+
+    const local = users[index]
+    if (userRevision(normalized) >= userRevision(local)) {
+      saveUserRecord(normalizeStoredUser({ ...local, ...normalized }))
     }
   }
 
@@ -1032,71 +1075,58 @@ export function clearAllUsers(): void {
 }
 
 export function deleteUser(userId: string): boolean {
-  const users = getMockUsers()
-  const index = users.findIndex(u => u.userId === userId)
-  
-  if (index === -1) return false
-  
-  users.splice(index, 1)
-  saveMockUsers(users)
-  return true
+  return removeUsersFromRegistryLocal([userId]) > 0
 }
 
-export function deleteUsers(userIds: string[]): number {
-  const users = getMockUsers()
-  const initialLength = users.length
-  
-  const filteredUsers = users.filter(u => !userIds.includes(u.userId))
-  saveMockUsers(filteredUsers)
-  
-  return initialLength - filteredUsers.length
+export async function deleteUsers(userIds: string[]): Promise<number> {
+  const count = removeUsersFromRegistryLocal(userIds)
+  if (count > 0 && isUserApiEnabled()) {
+    await deleteRemoteUsers(userIds)
+  }
+  return count
 }
 
 export function batchUpdateRole(userIds: string[], role: UserRole, add: boolean = true): number {
-  const users = getMockUsers()
   let count = 0
-  
-  users.forEach(user => {
-    if (userIds.includes(user.userId)) {
-      if (!Array.isArray(user.roles)) {
-        user.roles = ['member']
+
+  userIds.forEach((userId) => {
+    const user = getUserById(userId)
+    if (!user) return
+
+    const roles = Array.isArray(user.roles) ? [...user.roles] : ['member']
+    if (add) {
+      if (!roles.includes(role)) {
+        roles.push(role)
+        upsertUserInStorage({ ...user, roles })
+        count++
       }
-      if (add) {
-        if (!user.roles.includes(role)) {
-          user.roles.push(role)
-          count++
-        }
-      } else {
-        const index = user.roles.indexOf(role)
-        if (index !== -1 && user.roles.length > 1) {
-          user.roles.splice(index, 1)
-          count++
-        }
+    } else {
+      const index = roles.indexOf(role)
+      if (index !== -1 && roles.length > 1) {
+        roles.splice(index, 1)
+        upsertUserInStorage({ ...user, roles })
+        count++
       }
     }
   })
-  
-  saveMockUsers(users)
+
   return count
 }
 
 export function batchUpdateMemberLevel(userIds: string[], level: MemberLevel): number {
-  const users = getMockUsers()
   let count = 0
-  
-  users.forEach(user => {
-    if (userIds.includes(user.userId)) {
-      user.memberLevel = level
-      count++
-    }
+
+  userIds.forEach((userId) => {
+    const user = getUserById(userId)
+    if (!user) return
+    upsertUserInStorage({ ...user, memberLevel: level })
+    count++
   })
-  
-  saveMockUsers(users)
+
   return count
 }
 
 export function batchAddUsers(newUsers: Omit<User, 'userId' | 'passwordSalt' | 'passwordHash' | 'registerTime' | 'lastPasswordChangeTime'>[]): User[] {
-  const users = getMockUsers()
   const createdUsers: User[] = []
   
   newUsers.forEach(userData => {
@@ -1112,11 +1142,10 @@ export function batchAddUsers(newUsers: Omit<User, 'userId' | 'passwordSalt' | '
       lastPasswordChangeTime: Date.now()
     }
     
-    users.push(newUser)
-    createdUsers.push(newUser)
+    const created = upsertUserInStorage(newUser)
+    createdUsers.push(created)
   })
-  
-  saveMockUsers(users)
+
   return createdUsers
 }
 
@@ -1217,12 +1246,13 @@ const DefaultRolePermissionConfigs: Record<string, Record<string, Record<Permiss
     order_management: { view: false, create: false, edit: false, delete: false },
     points_management: { view: false, create: false, edit: false, delete: false },
     system_settings: { view: false, create: false, edit: false, delete: false },
-    profile: { view: false, create: false, edit: false, delete: false },
-    orders: { view: false, create: false, edit: false, delete: false },
-    points: { view: false, create: false, edit: false, delete: false },
-    settings: { view: false, create: false, edit: false, delete: false },
-    travel: { view: false, create: false, edit: false, delete: false },
-    health: { view: false, create: false, edit: false, delete: false }
+    profile: { view: true, create: false, edit: true, delete: false },
+    orders: { view: true, create: true, edit: true, delete: false },
+    points: { view: true, create: false, edit: false, delete: false },
+    settings: { view: true, create: false, edit: true, delete: false },
+    travel: { view: true, create: true, edit: true, delete: true },
+    travellog: { view: true, create: true, edit: true, delete: true },
+    health: { view: true, create: true, edit: true, delete: true }
   },
   guest: {
     dashboard: { view: false, create: false, edit: false, delete: false },
@@ -1244,17 +1274,42 @@ function getStoredRolePermissions(): Record<string, Record<string, Record<Permis
   try {
     const stored = wx.getStorageSync(ROLE_PERMISSIONS_KEY)
     if (stored) {
-      const storedConfigs = JSON.parse(stored)
-      const result = { ...DefaultRolePermissionConfigs }
-      Object.keys(storedConfigs).forEach(key => {
-        result[key] = storedConfigs[key]
+      const storedConfigs = JSON.parse(stored) as Record<
+        string,
+        Record<string, Record<PermissionAction, boolean>>
+      >
+      const result = JSON.parse(JSON.stringify(DefaultRolePermissionConfigs)) as Record<
+        string,
+        Record<string, Record<PermissionAction, boolean>>
+      >
+      Object.keys(storedConfigs).forEach((roleKey) => {
+        if (!result[roleKey]) result[roleKey] = {}
+        Object.keys(storedConfigs[roleKey] || {}).forEach((modId) => {
+          result[roleKey][modId] = {
+            ...(DefaultRolePermissionConfigs[roleKey]?.[modId] || {
+              view: false,
+              create: false,
+              edit: false,
+              delete: false
+            }),
+            ...storedConfigs[roleKey][modId]
+          }
+        })
       })
       return result
     }
   } catch (e) {
     console.error('Failed to load role permissions:', e)
   }
-  return { ...DefaultRolePermissionConfigs }
+  return JSON.parse(JSON.stringify(DefaultRolePermissionConfigs))
+}
+
+/** 修复旧版「会员无任何模块权限」的本地缓存 */
+export function repairDefaultMemberPermissions(): void {
+  const perms = getStoredRolePermissions()
+  if (perms.member?.travel?.view) return
+  perms.member = JSON.parse(JSON.stringify(DefaultRolePermissionConfigs.member))
+  saveRolePermissions(perms)
 }
 
 function saveRolePermissions(configs: Record<string, Record<string, Record<PermissionAction, boolean>>>): void {
@@ -1342,17 +1397,21 @@ function checkModuleConfigPermission(moduleId: string, action: PermissionAction)
 
 function checkRolePermission(userId: string, moduleId: string, action: PermissionAction): boolean {
   const user = getUserById(userId)
-  if (!user) return false
-  
+  if (!user || !Array.isArray(user.roles) || user.roles.length === 0) return false
+
+  for (const role of user.roles) {
+    if (hasPermission(role, 'all')) return true
+  }
+
   const latestPermissions = getStoredRolePermissions()
-  
+
   for (const role of user.roles) {
     const rolePermissions = latestPermissions[role]
-    if (rolePermissions && rolePermissions[moduleId] && rolePermissions[moduleId][action]) {
+    if (rolePermissions?.[moduleId]?.[action]) {
       return true
     }
   }
-  
+
   return false
 }
 

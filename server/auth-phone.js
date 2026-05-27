@@ -159,6 +159,21 @@ const server = http.createServer(async (req, res) => {
       return
     }
 
+    if (pathname === '/api/users/delete' && req.method === 'POST') {
+      const ids = Array.isArray(body.userIds) ? body.userIds : []
+      const map = loadUserMap()
+      let deleted = 0
+      ids.forEach((id) => {
+        if (id && map[id]) {
+          delete map[id]
+          deleted++
+        }
+      })
+      saveUserMap(map)
+      send(res, 200, { deleted })
+      return
+    }
+
     send(res, 404, { message: 'not found', path: pathname })
   } catch (e) {
     console.error('[api]', pathname, e)
@@ -177,5 +192,6 @@ server.listen(PORT, HOST, () => {
   console.log('  POST /auth/phone')
   console.log('  GET  /api/users')
   console.log('  POST /api/users/upsert')
+  console.log('  POST /api/users/delete')
   console.log(`  Users: ${USERS_FILE}`)
 })

@@ -135,10 +135,10 @@
           </view>
         </view>
         <view class="role-action">
-          <view class="action-option {{roleAction === 'add' ? 'active' : ''}}" bindtap="setRoleAction('add')">
+          <view class="action-option {{roleAction === 'add' ? 'active' : ''}}" bindtap="setRoleAction" data-action="add">
             <text>添加角色</text>
           </view>
-          <view class="action-option {{roleAction === 'remove' ? 'active' : ''}}" bindtap="setRoleAction('remove')">
+          <view class="action-option {{roleAction === 'remove' ? 'active' : ''}}" bindtap="setRoleAction" data-action="remove">
             <text>移除角色</text>
           </view>
         </view>
