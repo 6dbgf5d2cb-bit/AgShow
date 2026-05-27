@@ -1,15 +1,19 @@
 import { getCurrentSession, syncSessionUserToRegistry } from './utils/user'
-import { API_CONFIG } from './config/api'
+import { getRequiredCloudEnvId, isCloudRunEnabled } from './utils/cloud-request'
 
 App<IAppOption>({
   globalData: {},
   onLaunch() {
-    if (API_CONFIG.auth?.useCloudRun && wx.cloud) {
-      const env = (API_CONFIG.auth.cloudEnv || '').trim()
-      wx.cloud.init({
-        env: env || undefined,
-        traceUser: true
-      })
+    if (isCloudRunEnabled() && wx.cloud) {
+      try {
+        const envId = getRequiredCloudEnvId()
+        wx.cloud.init({
+          env: envId,
+          traceUser: true
+        })
+      } catch (e) {
+        console.error('[cloud]', (e as Error).message)
+      }
     }
 
     const logs = wx.getStorageSync('logs') || []

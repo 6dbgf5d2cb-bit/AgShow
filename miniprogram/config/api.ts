@@ -1,20 +1,16 @@
 export const API_CONFIG = {
   auth: {
     /**
-     * 方式一（推荐）：微信云托管
-     * 1. 在云托管控制台创建服务（如 agshow-api），上传 server 目录构建镜像
-     * 2. 小程序关联同一云环境
-     * 3. 填写 cloudService 为服务名，useCloudRun 设为 true
-     * 4. cloudEnv 留空则使用默认关联环境，或填环境 ID（如 prod-xxx）
+     * 微信云托管（推荐）
+     * cloudEnv：必填！云开发「环境 ID」（不是环境名称）
+     *   查看路径：微信公众平台 → 开发 → 云开发 → 设置 → 环境 ID（如 prod-abc123）
+     * cloudService：云托管「服务名称」（服务列表里的名称，你当前为 express-m78v-002）
      */
     useCloudRun: true,
-    cloudService: 'agshow-api',
-    cloudEnv: '',
+    cloudService: 'express-m78v-002',
+    cloudEnv: 'prod-d7g5aexo529d6be22', // ← 请填写你的环境 ID，例如 'prod-xxxxxx'
 
-    /**
-     * 方式二：自建 HTTPS 域名（与云托管二选一，云托管优先）
-     * useCloudRun 为 false 时生效
-     */
+    /** 自建 HTTPS（useCloudRun 为 false 时使用） */
     baseUrl: ''
   },
   tianapi: {

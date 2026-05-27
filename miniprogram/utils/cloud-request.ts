@@ -1,8 +1,10 @@
 /**
  * 微信云托管内网调用（无需配置 request 合法域名）
- * 文档：https://developers.weixin.qq.com/miniprogram/dev/wxcloudservice/wxcloudrunguide/
  */
 import { API_CONFIG } from '../config/api'
+
+const CLOUD_ENV_HINT =
+  '请在 miniprogram/config/api.ts 填写 cloudEnv（微信公众平台 → 云开发 → 设置 → 环境 ID，形如 prod-xxxx）'
 
 export function isCloudRunEnabled(): boolean {
   const auth = API_CONFIG.auth
@@ -13,9 +15,13 @@ function getCloudService(): string {
   return (API_CONFIG.auth?.cloudService || '').trim()
 }
 
-function getCloudEnv(): string | undefined {
+/** callContainer 必填：云开发环境 ID，不能留空 */
+export function getRequiredCloudEnvId(): string {
   const env = (API_CONFIG.auth?.cloudEnv || '').trim()
-  return env || undefined
+  if (!env) {
+    throw new Error(CLOUD_ENV_HINT)
+  }
+  return env
 }
 
 export function isRemoteApiEnabled(): boolean {
@@ -57,20 +63,26 @@ export function remoteRequest<T>(
 }
 
 function callContainer<T>(path: string, method: 'GET' | 'POST', data?: unknown): Promise<T> {
+  let envId: string
+  try {
+    envId = getRequiredCloudEnvId()
+  } catch (e) {
+    return Promise.reject(e)
+  }
+
   return new Promise((resolve, reject) => {
-    if (!wx.cloud?.callContainer) {
+    const cloud = wx.cloud as {
+      callContainer?: (options: WechatMiniprogram.IAnyObject) => void
+    }
+    if (!cloud?.callContainer) {
       reject(new Error('当前基础库不支持云托管，请升级微信版本或检查是否已关联云环境'))
       return
     }
 
-    const config: WechatMiniprogram.CloudConfig = {}
-    const cloudEnv = getCloudEnv()
-    if (cloudEnv) {
-      config.env = cloudEnv
-    }
-
-    wx.cloud.callContainer({
-      config,
+    cloud.callContainer({
+      config: {
+        env: envId
+      },
       path,
       method,
       header: {
@@ -78,7 +90,7 @@ function callContainer<T>(path: string, method: 'GET' | 'POST', data?: unknown):
         'content-type': 'application/json'
       },
       data: data as WechatMiniprogram.IAnyObject,
-      success: (res) => {
+      success: (res: WechatMiniprogram.RequestSuccessCallbackResult) => {
         const body = (res.data || {}) as T & { message?: string }
         const code = res.statusCode || 0
         if (code >= 200 && code < 300) {
@@ -87,7 +99,12 @@ function callContainer<T>(path: string, method: 'GET' | 'POST', data?: unknown):
         }
         reject(new Error(body?.message || `云托管请求失败(${code})`))
       },
-      fail: (err) => {
+      fail: (err: WechatMiniprogram.GeneralCallbackResult) => {
+        const msg = err.errMsg || ''
+        if (msg.indexOf('envId') !== -1 || msg.indexOf('env') !== -1) {
+          reject(new Error(CLOUD_ENV_HINT))
+          return
+        }
         reject(new Error(err.errMsg || '云托管调用失败，请确认服务已部署且服务名正确'))
       }
     })
