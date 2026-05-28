@@ -31,7 +31,7 @@ export const API_CONFIG = {
    */
   officialAccount: {
     enabled: true,
-    username: '', // 填写 gh_ 开头的原始 ID，用于打开公众号主页
+    username: 'gh_08e3ca983668', // 填写 gh_ 开头的原始 ID，用于打开公众号主页
     displayName: 'AgShow'
   }
 }
