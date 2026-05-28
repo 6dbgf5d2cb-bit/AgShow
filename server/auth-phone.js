@@ -11,6 +11,11 @@ const http = require('http')
 const fs = require('fs')
 const path = require('path')
 const { createTravelLogDraft, isMpShareConfigured } = require('./mp-article')
+const {
+  handleSendResetCode,
+  handleResetPassword,
+  handleResetByWechatPhone
+} = require('./password-reset')
 
 const APPID = process.env.WX_APPID || ''
 const SECRET = process.env.WX_SECRET || ''
@@ -86,6 +91,18 @@ function send(res, status, data) {
 
 function getPathname(req) {
   return (req.url || '/').split('?')[0]
+}
+
+function getQuery(req) {
+  const raw = req.url || ''
+  const idx = raw.indexOf('?')
+  if (idx < 0) return {}
+  const out = {}
+  for (const part of raw.slice(idx + 1).split('&')) {
+    const [k, v] = part.split('=')
+    if (k) out[decodeURIComponent(k)] = decodeURIComponent(v || '')
+  }
+  return out
 }
 
 function loadUserMap() {
@@ -206,8 +223,53 @@ const server = http.createServer(async (req, res) => {
       return
     }
 
+    if (pathname === '/api/auth/send-reset-code' && req.method === 'POST') {
+      const result = await handleSendResetCode(body, listAllUsers)
+      send(res, 200, result)
+      return
+    }
+
+    if (pathname === '/api/auth/reset-password' && req.method === 'POST') {
+      const result = handleResetPassword(body, listAllUsers, upsertUserInMap)
+      send(res, 200, result)
+      return
+    }
+
+    if (pathname === '/api/auth/reset-password-phone' && req.method === 'POST') {
+      let verifiedPhone = body.phone
+      if (body.phoneCode) {
+        verifiedPhone = await getPhoneByCode(body.phoneCode)
+      }
+      const result = handleResetByWechatPhone(
+        body,
+        listAllUsers,
+        upsertUserInMap,
+        verifiedPhone
+      )
+      send(res, 200, result)
+      return
+    }
+
     if (pathname === '/api/users' && req.method === 'GET') {
       send(res, 200, { users: listAllUsers() })
+      return
+    }
+
+    if (pathname === '/api/users/lookup' && req.method === 'GET') {
+      const q = getQuery(req)
+      const users = listAllUsers()
+      let user = null
+      if (q.openId) {
+        user = users.find((u) => u.wechatOpenId === q.openId) || null
+      }
+      if (!user && q.phone) {
+        user = users.find((u) => u.phone === q.phone) || null
+      }
+      if (!user && q.username) {
+        const key = String(q.username).toLowerCase()
+        user = users.find((u) => (u.username || '').toLowerCase() === key) || null
+      }
+      send(res, 200, { user })
       return
     }
 
@@ -308,7 +370,11 @@ server.listen(PORT, HOST, () => {
   console.log('  GET  /health')
   console.log('  POST /auth/wechat')
   console.log('  POST /auth/phone')
+  console.log('  POST /api/auth/send-reset-code')
+  console.log('  POST /api/auth/reset-password')
+  console.log('  POST /api/auth/reset-password-phone')
   console.log('  GET  /api/users')
+  console.log('  GET  /api/users/lookup?openId=&phone=&username=')
   console.log('  POST /api/users/upsert')
   console.log('  POST /api/users/delete')
   console.log('  GET  /api/travel/routes')

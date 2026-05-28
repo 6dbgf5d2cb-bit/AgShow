@@ -129,9 +129,9 @@ Page({
       title: '确认删除',
       content: '确定要删除这条线路吗？删除后无法恢复。',
       confirmColor: '#ff4d4f',
-      success: (res) => {
+      success: async (res) => {
         if (res.confirm) {
-          const success = deleteRoute(this.data.routeId)
+          const success = await deleteRoute(this.data.routeId)
           if (success) {
             wx.showToast({
               title: '删除成功',
@@ -196,7 +196,7 @@ Page({
     })
   },
 
-  signUp() {
+  async signUp() {
     const session = getCurrentSession()
     if (!session) {
       wx.showToast({
@@ -206,7 +206,7 @@ Page({
       return
     }
 
-    const result = signUpRoute(this.data.routeId, session.userId)
+    const result = await signUpRoute(this.data.routeId, session.userId)
     
     if (result.success) {
       wx.showToast({

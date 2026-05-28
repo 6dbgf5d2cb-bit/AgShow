@@ -6,6 +6,7 @@ import {
   syncCurrentUserFromRemote
 } from './utils/user'
 import { getRequiredCloudEnvId, isCloudRunEnabled } from './utils/cloud-request'
+import { syncAllFromCloud } from './utils/cloud-sync'
 
 App<IAppOption>({
   globalData: {},
@@ -30,6 +31,7 @@ App<IAppOption>({
     repairDefaultAdminAccount()
     syncSessionUserToRegistry()
     void syncCurrentUserFromRemote()
+    void syncAllFromCloud()
 
     const session = getCurrentSession()
     if (session) {
@@ -40,6 +42,7 @@ App<IAppOption>({
   },
   onShow() {
     void syncCurrentUserFromRemote()
+    void syncAllFromCloud()
     const session = getCurrentSession()
     const pages = getCurrentPages()
     const currentPage = pages[pages.length - 1]

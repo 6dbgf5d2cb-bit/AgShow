@@ -12,6 +12,7 @@ import {
   MemberLevel,
   UserRole
 } from '../../utils/user'
+import { syncAllFromCloud } from '../../utils/cloud-sync'
 
 interface MenuItem {
   id: string
@@ -46,6 +47,11 @@ Page({
   },
 
   async loadUserInfo() {
+    try {
+      await syncAllFromCloud()
+    } catch {
+      // 离线时仍可读本地
+    }
     await syncCurrentUserFromRemote()
 
     const session = getCurrentSession()

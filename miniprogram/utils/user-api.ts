@@ -14,6 +14,24 @@ export async function fetchRemoteUsers(): Promise<User[]> {
   return Array.isArray(res.users) ? res.users : []
 }
 
+/** 按 openId / 手机号 / 用户名查询云端用户（重装后恢复账号） */
+export async function fetchRemoteUserLookup(params: {
+  openId?: string
+  phone?: string
+  username?: string
+}): Promise<User | null> {
+  const qs: string[] = []
+  if (params.openId) qs.push(`openId=${encodeURIComponent(params.openId)}`)
+  if (params.phone) qs.push(`phone=${encodeURIComponent(params.phone)}`)
+  if (params.username) qs.push(`username=${encodeURIComponent(params.username)}`)
+  if (!qs.length) return null
+  const res = await remoteRequest<{ user: User | null }>(
+    `/api/users/lookup?${qs.join('&')}`,
+    'GET'
+  )
+  return res.user || null
+}
+
 /** 将用户同步到服务端 */
 export async function pushUserToRemote(user: User): Promise<User> {
   const res = await remoteRequest<{ user: User }>('/api/users/upsert', 'POST', user)

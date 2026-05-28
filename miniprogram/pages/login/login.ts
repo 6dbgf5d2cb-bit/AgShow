@@ -11,7 +11,8 @@ import {
 import {
   wxLoginAsync,
   getUserProfileAsync,
-  getLocalWechatOpenId,
+  setStoredWechatOpenId,
+  getStoredWechatOpenId,
   getLocalPhoneFromCode,
   fetchWechatSession,
   fetchPhoneNumber,
@@ -20,6 +21,7 @@ import {
   isPhoneAuthSuccess
 } from '../../utils/auth'
 import { hasRemoteAuth } from '../../utils/auth'
+import { syncAllFromCloud } from '../../utils/cloud-sync'
 
 Page({
   data: {
@@ -72,7 +74,15 @@ Page({
     this.setData({ privacyTip: '', errorMessage: '' })
   },
 
-  navigateAfterLogin() {
+  async navigateAfterLogin() {
+    wx.showLoading({ title: '同步云端数据', mask: true })
+    try {
+      await syncAllFromCloud()
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : '部分数据同步失败'
+      wx.showToast({ title: msg, icon: 'none', duration: 2500 })
+    }
+    wx.hideLoading()
     wx.showToast({ title: '登录成功', icon: 'success', duration: 1500 })
     setTimeout(() => {
       wx.redirectTo({ url: '/pages/member/member' })
@@ -107,7 +117,6 @@ Page({
 
     try {
       const wxCode = await wxLoginAsync()
-      let openId = getLocalWechatOpenId()
       let nickname = '微信用户'
       let avatarUrl = ''
 
@@ -119,14 +128,17 @@ Page({
         // 可拒绝头像昵称
       }
 
-      try {
-        const server = await fetchWechatSession(wxCode)
-        if (server?.openId) openId = server.openId
-      } catch {
-        // 未配置或请求失败则用本机 openId
+      if (!hasRemoteAuth()) {
+        throw new Error('未配置云托管，无法保存用户到后台，请在 config/api.ts 开启 useCloudRun')
       }
 
-      await loginWithWeChat({ wxCode, openId, nickname, avatarUrl })
+      const server = await fetchWechatSession(wxCode)
+      if (!server?.openId) {
+        throw new Error('无法获取微信身份，请检查云托管 WX_APPID、WX_SECRET')
+      }
+      setStoredWechatOpenId(server.openId)
+
+      await loginWithWeChat({ wxCode, openId: server.openId, nickname, avatarUrl })
       this.setData({ wxLoading: false })
       this.navigateAfterLogin()
     } catch (error: any) {
@@ -165,25 +177,18 @@ Page({
 
     try {
       let phone = ''
-      let openId = getLocalWechatOpenId()
-      if (hasRemoteAuth()) {
-        const server = await fetchPhoneNumber(phoneCode)
-        if (server?.phone) {
-          phone = server.phone
-          if (server.openId) openId = server.openId
-        }
-      } else {
-        // 无服务端：演示模式用 code 映射本机号（非真实号码）
-        phone = getLocalPhoneFromCode(phoneCode)
-        wx.showToast({
-          title: '演示模式已登录',
-          icon: 'none',
-          duration: 2000
-        })
+      let openId = ''
+      if (!hasRemoteAuth()) {
+        throw new Error('未配置云托管，无法保存用户到后台')
       }
-
-      if (!phone) {
-        throw new Error('未能获取手机号，请配置服务端或使用手机号登录')
+      const server = await fetchPhoneNumber(phoneCode)
+      if (!server?.phone) {
+        throw new Error('未能获取手机号，请检查云托管 WX_APPID、WX_SECRET')
+      }
+      phone = server.phone
+      if (server.openId) {
+        openId = server.openId
+        setStoredWechatOpenId(server.openId)
       }
 
       await loginWithPhoneNumber({ phone, openId })
@@ -223,8 +228,8 @@ Page({
     this.setData({ phoneLoading: true, showPhoneModal: false, errorMessage: '' })
 
     try {
-      const openId = getLocalWechatOpenId()
-      await loginWithPhoneNumber({ phone, openId })
+      const openId = getStoredWechatOpenId()
+      await loginWithPhoneNumber({ phone, openId: openId || undefined })
       this.setData({ phoneLoading: false })
       this.navigateAfterLogin()
     } catch (error: any) {
@@ -271,7 +276,7 @@ Page({
 
   goToForgotPassword() {
     const name = this.data.username.trim().toLowerCase()
-    if (name === DEFAULT_ADMIN_USERNAME || !name) {
+    if (name === DEFAULT_ADMIN_USERNAME) {
       wx.showModal({
         title: '重置管理员密码',
         content: `将把管理员账号密码重置为：${DEFAULT_ADMIN_PASSWORD}\n用户名：${DEFAULT_ADMIN_USERNAME}`,
@@ -289,6 +294,6 @@ Page({
       })
       return
     }
-    wx.showToast({ title: '请联系管理员重置密码', icon: 'none' })
+    wx.navigateTo({ url: '/pages/forgot-password/forgot-password' })
   }
 })

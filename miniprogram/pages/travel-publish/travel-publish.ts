@@ -252,14 +252,14 @@ Page({
       }
 
       if (this.data.isEdit) {
-        updateRoute(this.data.routeId, routeData)
+        await updateRoute(this.data.routeId, routeData)
         wx.showToast({
           title: '更新成功',
           icon: 'success',
           duration: 1500
         })
       } else {
-        createRoute(session.userId, routeData)
+        await createRoute(session.userId, routeData)
         wx.showToast({
           title: '发布成功',
           icon: 'success',

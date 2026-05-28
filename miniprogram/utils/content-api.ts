@@ -1,5 +1,6 @@
 /**
- * 自驾游 / 旅行记 云端同步（与用户数据共用云托管）
+ * 自驾游 / 旅行记 云端同步（与用户数据共用微信云托管 express 服务）
+ * 数据持久化在服务端 data/travel_routes.json、data/travel_logs.json
  */
 import { isRemoteApiEnabled, remoteRequest } from './cloud-request'
 import type { TravelRoute } from './travel'

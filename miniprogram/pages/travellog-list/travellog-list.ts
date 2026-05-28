@@ -175,14 +175,14 @@ Page({
       title: '确认批量删除',
       content: `确定要删除选中的 ${selectedLogs.length} 篇旅行记吗？删除后无法恢复。`,
       confirmColor: '#ff4d4f',
-      success: (res) => {
+      success: async (res) => {
         if (res.confirm) {
           let successCount = 0
-          selectedLogs.forEach(logId => {
-            if (deleteLog(logId)) {
+          for (const logId of selectedLogs) {
+            if (await deleteLog(logId)) {
               successCount++
             }
-          })
+          }
 
           wx.showToast({
             title: `已删除 ${successCount} 篇旅行记`,

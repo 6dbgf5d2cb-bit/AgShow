@@ -112,15 +112,35 @@ baseUrl: 'http://127.0.0.1:3000'  // 开发者工具勾选「不校验合法域�
 | GET | `/health` | 健康检查 |
 | POST | `/auth/wechat` | `{ code }` → `{ openId }` |
 | POST | `/auth/phone` | `{ code }` → `{ phone }` |
+| POST | `/api/auth/send-reset-code` | `{ channel:'sms'\|'email', phone?, email? }` 发送找回密码验证码 |
+| POST | `/api/auth/reset-password` | `{ channel, phone?, email?, code, newPassword }` |
+| POST | `/api/auth/reset-password-phone` | `{ phoneCode, code?, newPassword }` 微信验证手机号重置 |
 | GET | `/api/users` | 全部用户列表 |
+| GET | `/api/users/lookup?openId=&phone=&username=` | 按条件查询单个用户（重装恢复） |
 | POST | `/api/users/upsert` | 注册/登录同步用户 |
 | POST | `/api/users/delete` | 删除用户 |
 | GET | `/api/travel/routes` | 自驾游线路列表 |
 | POST | `/api/travel/routes/upsert` | 发布/更新线路 |
 | GET | `/api/travel/logs` | 旅行记列表 |
-| POST | `/api/travel/logs/upsert` | 发布/更新旅行记 |
-| POST | `/api/travel/logs/share-to-mp` | 旅行记 → 公众号图文草稿 |
-| GET | `/api/travel/mp-config` | 是否已配置公众号同步 |
+| POST | `/api/travel/logs/upsert` | 发布/更新/删除旅行记（status=deleted 同步删除态） |
+
+小程序会在**登录成功、启动、进入会员中心**时拉取上述数据；发布/编辑/删除时**等待写入**云托管后再提示成功。
+
+| 数据 | 服务端存储文件 |
+|------|----------------|
+| 用户注册/登录 | `data/users.json` |
+| 旅行记 | `data/travel_logs.json` |
+| 自驾游线路 | `data/travel_routes.json` |
+| 找回密码验证码 | `data/reset_codes.json` |
+
+### 忘记密码（短信 / 邮箱）
+
+1. 用户注册时需填写**手机号**或**邮箱**（至少一项），找回时向对应渠道发送 6 位验证码（10 分钟有效）。
+2. 云托管环境变量（对接真实发送，二选一或都配）：
+   - `SMS_HOOK_URL` — POST `{ phone, message, code }` 到您的短信网关
+   - `EMAIL_HOOK_URL` — POST `{ email, subject, html, code }` 到您的邮件服务
+3. 开发调试：设 `RESET_CODE_DEBUG=true`，接口会返回 `debugCode`（勿用于生产）。
+4. 微信「验证手机号快速重置」：授权手机号须与账号绑定手机一致。
 
 ### 旅行记同步到关联公众号
 

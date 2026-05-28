@@ -1,4 +1,10 @@
-import { isUserApiEnabled, fetchRemoteUsers, pushUserToRemote, deleteRemoteUsers } from './user-api'
+import {
+  isUserApiEnabled,
+  fetchRemoteUsers,
+  fetchRemoteUserLookup,
+  pushUserToRemote,
+  deleteRemoteUsers
+} from './user-api'
 
 export type MemberLevel = 'normal' | 'gold' | 'vip' | 'premium'
 
@@ -125,6 +131,74 @@ function clearDeletedUserMark(userId: string): void {
 async function pushUserAndWait(user: User): Promise<void> {
   if (!isUserApiEnabled()) return
   await pushUserToRemote(user)
+}
+
+/**
+ * 从云端恢复用户到本机（重装小程序后按 openId/手机/用户名匹配）
+ */
+export async function restoreUserFromRemote(criteria: {
+  openId?: string
+  phone?: string
+  username?: string
+}): Promise<User | null> {
+  if (!isUserApiEnabled()) return null
+
+  try {
+    if (criteria.openId) {
+      const byOpenId = await fetchRemoteUserLookup({ openId: criteria.openId })
+      if (byOpenId) {
+        mergeUsersIntoLocalRegistry([byOpenId])
+        return (
+          getUserById(byOpenId.userId) ||
+          findUserByWechatOpenId(criteria.openId) ||
+          null
+        )
+      }
+    }
+    if (criteria.phone) {
+      const byPhone = await fetchRemoteUserLookup({ phone: criteria.phone })
+      if (byPhone) {
+        mergeUsersIntoLocalRegistry([byPhone])
+        return getUserById(byPhone.userId) || findUserByPhone(criteria.phone) || null
+      }
+    }
+    if (criteria.username) {
+      const byName = await fetchRemoteUserLookup({ username: criteria.username })
+      if (byName) {
+        mergeUsersIntoLocalRegistry([byName])
+        const key = criteria.username.toLowerCase()
+        return (
+          getUserById(byName.userId) ||
+          readAllUsersFromRegistry().find(
+            (u) => (u.username || '').toLowerCase() === key
+          ) ||
+          null
+        )
+      }
+    }
+
+    await pullRemoteUsersAndMerge()
+  } catch (e) {
+    console.warn('[user] restoreUserFromRemote failed', e)
+  }
+
+  if (criteria.openId) {
+    const u = findUserByWechatOpenId(criteria.openId)
+    if (u) return u
+  }
+  if (criteria.phone) {
+    const u = findUserByPhone(criteria.phone)
+    if (u) return u
+  }
+  if (criteria.username) {
+    const key = criteria.username.toLowerCase()
+    return (
+      readAllUsersFromRegistry().find(
+        (u) => (u.username || '').toLowerCase() === key
+      ) || null
+    )
+  }
+  return null
 }
 
 function generateUserId(): string {
@@ -650,6 +724,10 @@ function encodeIdCard(idCard: string): string {
 }
 
 export async function register(request: RegisterRequest): Promise<User> {
+  if (isUserApiEnabled()) {
+    await pullRemoteUsersAndMerge()
+  }
+
   const users = readAllUsersFromRegistry()
 
   if (users.some((u) => u.username === request.username)) {
@@ -692,7 +770,9 @@ export async function register(request: RegisterRequest): Promise<User> {
     roles: request.username.toLowerCase() === 'admin' ? ['admin'] : ['member']
   }
 
-  return upsertUserInStorage(newUser)
+  const saved = upsertUserInStorage(newUser)
+  await pushUserAndWait(saved)
+  return saved
 }
 
 function persistSession(user: User, rememberMe = true): UserSession {
@@ -787,12 +867,16 @@ function createOAuthUser(params: {
 
 /** 微信登录：按 openId 查找或自动注册新会员 */
 export async function loginWithWeChat(request: WeChatLoginRequest): Promise<UserSession> {
-  if (!request.openId) {
-    throw new Error('无法获取微信身份标识，请重试')
+  if (!request.openId || request.openId.startsWith('WX_LOCAL_')) {
+    throw new Error(
+      '无法获取微信身份，请确认云托管已部署且已配置 WX_APPID、WX_SECRET 后重试'
+    )
   }
 
-  const users = readAllUsersFromRegistry()
-  let user = findUserByWechatOpenId(request.openId, users)
+  let user = await restoreUserFromRemote({ openId: request.openId })
+  if (!user) {
+    user = findUserByWechatOpenId(request.openId, readAllUsersFromRegistry())
+  }
 
   if (!user) {
     user = createOAuthUser({
@@ -815,7 +899,7 @@ export async function loginWithWeChat(request: WeChatLoginRequest): Promise<User
   finalizeUserLogin(user)
 
   if (user.userId) {
-    await syncRemoteUserIntoRegistry(user.userId)
+    await syncRemoteUserIntoRegistry(user.userId, { openId: request.openId })
     const fresh = getUserById(user.userId)
     if (fresh) {
       user = {
@@ -832,6 +916,7 @@ export async function loginWithWeChat(request: WeChatLoginRequest): Promise<User
   }
 
   const savedUser = upsertUserInStorage(user)
+  await pushUserAndWait(savedUser)
 
   const currentSession = getCurrentSession()
   const keepAdminSession = !!currentSession?.userInfo?.roles?.includes('admin')
@@ -861,8 +946,14 @@ export async function loginWithPhoneNumber(request: PhoneLoginRequest): Promise<
     throw new Error('手机号格式无效')
   }
 
+  let user = await restoreUserFromRemote({
+    phone: request.phone,
+    openId: request.openId
+  })
   const users = readAllUsersFromRegistry()
-  let user = findUserByPhone(request.phone, users)
+  if (!user) {
+    user = findUserByPhone(request.phone, users)
+  }
 
   if (!user && request.openId) {
     user = findUserByWechatOpenId(request.openId, users)
@@ -892,7 +983,10 @@ export async function loginWithPhoneNumber(request: PhoneLoginRequest): Promise<
   finalizeUserLogin(user)
 
   if (user.userId) {
-    await syncRemoteUserIntoRegistry(user.userId)
+    await syncRemoteUserIntoRegistry(user.userId, {
+      openId: request.openId,
+      phone: request.phone
+    })
     const fresh = getUserById(user.userId)
     if (fresh) {
       user = {
@@ -908,7 +1002,9 @@ export async function loginWithPhoneNumber(request: PhoneLoginRequest): Promise<
     }
   }
 
-  return persistSession(upsertUserInStorage(user), true)
+  const saved = upsertUserInStorage(user)
+  await pushUserAndWait(saved)
+  return persistSession(saved, true)
 }
 
 /** 将管理员密码重置为默认 admin123（忘记密码时使用） */
@@ -940,8 +1036,10 @@ export function resetDefaultAdminPassword(): boolean {
 }
 
 export async function login(request: LoginRequest): Promise<UserSession> {
-  const users = getMockUsers()
   const nameKey = request.username.trim().toLowerCase()
+  await restoreUserFromRemote({ username: nameKey })
+
+  const users = getMockUsers()
   const user = users.find((u) => (u.username || '').toLowerCase() === nameKey)
 
   if (!user) {
@@ -985,7 +1083,7 @@ export async function login(request: LoginRequest): Promise<UserSession> {
   finalizeUserLogin(user)
 
   if (user.userId) {
-    await syncRemoteUserIntoRegistry(user.userId)
+    await syncRemoteUserIntoRegistry(user.userId, { openId: user.wechatOpenId, phone: user.phone })
     const fresh = getUserById(user.userId)
     if (fresh) {
       user = {
@@ -998,7 +1096,9 @@ export async function login(request: LoginRequest): Promise<UserSession> {
     }
   }
 
-  return persistSession(upsertUserInStorage(user), !!request.rememberMe)
+  const saved = upsertUserInStorage(user)
+  await pushUserAndWait(saved)
+  return persistSession(saved, !!request.rememberMe)
 }
 
 export function logout(): void {
@@ -1048,15 +1148,24 @@ export function refreshSessionFromRegistry(userId?: string): void {
 }
 
 /** 从云端拉取指定用户并合并到本机注册表 */
-export async function syncRemoteUserIntoRegistry(userId: string): Promise<User | null> {
+export async function syncRemoteUserIntoRegistry(
+  userId: string,
+  hints?: { openId?: string; phone?: string }
+): Promise<User | null> {
   if (!userId) return null
 
   if (isUserApiEnabled()) {
     try {
-      const remoteUsers = await fetchRemoteUsers()
-      const remote = remoteUsers.find((u) => u.userId === userId)
-      if (remote) {
-        mergeUsersIntoLocalRegistry([remote])
+      if (hints?.openId) {
+        await restoreUserFromRemote({ openId: hints.openId })
+      } else if (hints?.phone) {
+        await restoreUserFromRemote({ phone: hints.phone })
+      } else {
+        const remoteUsers = await fetchRemoteUsers()
+        const remote = remoteUsers.find((u) => u.userId === userId)
+        if (remote) {
+          mergeUsersIntoLocalRegistry([remote])
+        }
       }
     } catch (e) {
       console.warn('[user] syncRemoteUserIntoRegistry failed', e)

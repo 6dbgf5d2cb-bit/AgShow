@@ -37,13 +37,24 @@ export function getUserProfileAsync(): Promise<{ nickName: string; avatarUrl: st
   })
 }
 
-export function getLocalWechatOpenId(): string {
-  let openId = wx.getStorageSync(DEVICE_WECHAT_OPENID_KEY) as string
-  if (!openId) {
-    openId = 'WX_LOCAL_' + Date.now().toString(36).toUpperCase()
+export function getStoredWechatOpenId(): string {
+  return (wx.getStorageSync(DEVICE_WECHAT_OPENID_KEY) as string) || ''
+}
+
+/** 保存服务端 code2session 返回的真实 openId（重装小程序后靠此 + 云端恢复用户） */
+export function setStoredWechatOpenId(openId: string): void {
+  if (openId) {
     wx.setStorageSync(DEVICE_WECHAT_OPENID_KEY, openId)
   }
-  return openId
+}
+
+/** @deprecated 仅兼容旧代码；新登录必须走服务端 openId，勿再生成假 ID */
+export function getLocalWechatOpenId(): string {
+  const stored = getStoredWechatOpenId()
+  if (stored) return stored
+  const fallback = 'WX_LOCAL_' + Date.now().toString(36).toUpperCase()
+  wx.setStorageSync(DEVICE_WECHAT_OPENID_KEY, fallback)
+  return fallback
 }
 
 /** 演示环境：用授权 code 生成本机绑定号（真机真实号码必须走服务端解密） */

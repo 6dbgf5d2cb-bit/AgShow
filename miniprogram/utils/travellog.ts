@@ -225,6 +225,14 @@ function mergeLogs(local: TravelLog[], remote: TravelLog[]): TravelLog[] {
   return Array.from(map.values())
 }
 
+/** 写入云托管后台（发布/编辑/删除必调，失败则抛错） */
+export async function pushLogToCloud(log: TravelLog): Promise<void> {
+  if (!isContentApiEnabled()) {
+    throw new Error('未配置云托管，旅行记无法保存到后台，请检查 config/api.ts')
+  }
+  await pushLogToRemote(log)
+}
+
 async function syncLogToRemote(log: TravelLog): Promise<void> {
   if (!isContentApiEnabled()) return
   try {
@@ -270,10 +278,10 @@ export function canViewPhone(viewerId: string): boolean {
   return goldLevels.includes(viewer.memberLevel)
 }
 
-export function createLog(
+export async function createLog(
   publisherId: string,
   data: CreateTravelLogRequest
-): TravelLog | null {
+): Promise<TravelLog | null> {
   const checkResult = canPublishLog(publisherId)
   if (!checkResult.canPublish) {
     console.error('createLog failed: ', checkResult.message)
@@ -303,7 +311,7 @@ export function createLog(
   console.log('Before create: logs count =', logs.length)
   logs.unshift(newLog)
   saveTravelLogs(logs)
-  void syncLogToRemote(newLog)
+  await pushLogToCloud(newLog)
 
   return newLog
 }
@@ -429,7 +437,7 @@ export function deleteComment(logId: string, commentId: string, userId: string):
   return true
 }
 
-export function updateLog(logId: string, updates: Partial<TravelLog>): TravelLog | null {
+export async function updateLog(logId: string, updates: Partial<TravelLog>): Promise<TravelLog | null> {
   const logs = getTravelLogs()
   const index = logs.findIndex(l => l.logId === logId)
   
@@ -442,11 +450,11 @@ export function updateLog(logId: string, updates: Partial<TravelLog>): TravelLog
   }
   
   saveTravelLogs(logs)
-  void syncLogToRemote(logs[index])
+  await pushLogToCloud(logs[index])
   return logs[index]
 }
 
-export function deleteLog(logId: string): boolean {
+export async function deleteLog(logId: string): Promise<boolean> {
   const logs = getTravelLogs()
   const index = logs.findIndex(l => l.logId === logId)
   
@@ -455,7 +463,7 @@ export function deleteLog(logId: string): boolean {
   logs[index].status = 'deleted'
   logs[index].updateTime = Date.now()
   saveTravelLogs(logs)
-  void syncLogToRemote(logs[index])
+  await pushLogToCloud(logs[index])
   return true
 }
 

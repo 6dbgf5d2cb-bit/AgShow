@@ -193,6 +193,14 @@ function mergeRoutes(local: TravelRoute[], remote: TravelRoute[]): TravelRoute[]
   return Array.from(map.values())
 }
 
+/** 写入云托管后台（发布/编辑/删除必调，失败则抛错） */
+export async function pushRouteToCloud(route: TravelRoute): Promise<void> {
+  if (!isContentApiEnabled()) {
+    throw new Error('未配置云托管，自驾游无法保存到后台，请检查 config/api.ts')
+  }
+  await pushRouteToRemote(route)
+}
+
 async function syncRouteToRemote(route: TravelRoute): Promise<void> {
   if (!isContentApiEnabled()) return
   try {
@@ -239,7 +247,7 @@ export function canViewPhone(viewerId: string): boolean {
   return goldLevels.includes(viewer.memberLevel)
 }
 
-export function createRoute(
+export async function createRoute(
   publisherId: string,
   data: {
     title: string
@@ -292,7 +300,7 @@ export function createRoute(
   
   routes.push(newRoute)
   saveTravelRoutes(routes)
-  void syncRouteToRemote(newRoute)
+  await pushRouteToCloud(newRoute)
 
   return newRoute
 }
@@ -312,7 +320,7 @@ export function getRoutesByPublisher(publisherId: string): TravelRoute[] {
   return routes.filter(r => r.publisherId === publisherId && r.status === 'active')
 }
 
-export function updateRoute(routeId: string, updates: Partial<TravelRoute>): TravelRoute | null {
+export async function updateRoute(routeId: string, updates: Partial<TravelRoute>): Promise<TravelRoute | null> {
   const routes = getTravelRoutes()
   const index = routes.findIndex(r => r.routeId === routeId)
   
@@ -325,11 +333,11 @@ export function updateRoute(routeId: string, updates: Partial<TravelRoute>): Tra
   }
   
   saveTravelRoutes(routes)
-  void syncRouteToRemote(routes[index])
+  await pushRouteToCloud(routes[index])
   return routes[index]
 }
 
-export function deleteRoute(routeId: string): boolean {
+export async function deleteRoute(routeId: string): Promise<boolean> {
   const routes = getTravelRoutes()
   const index = routes.findIndex(r => r.routeId === routeId)
   
@@ -338,11 +346,11 @@ export function deleteRoute(routeId: string): boolean {
   routes[index].status = 'deleted'
   routes[index].updateTime = Date.now()
   saveTravelRoutes(routes)
-  void syncRouteToRemote(routes[index])
+  await pushRouteToCloud(routes[index])
   return true
 }
 
-export function signUpRoute(routeId: string, userId: string): { success: boolean; message: string } {
+export async function signUpRoute(routeId: string, userId: string): Promise<{ success: boolean; message: string }> {
   const routes = getTravelRoutes()
   const index = routes.findIndex(r => r.routeId === routeId)
   
@@ -381,7 +389,7 @@ export function signUpRoute(routeId: string, userId: string): { success: boolean
   route.participants.push(participant)
   route.updateTime = Date.now()
   saveTravelRoutes(routes)
-  void syncRouteToRemote(route)
+  await pushRouteToCloud(route)
 
   return { success: true, message: '报名成功' }
 }

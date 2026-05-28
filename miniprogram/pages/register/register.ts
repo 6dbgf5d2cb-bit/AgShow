@@ -1,4 +1,5 @@
 import { register, RegisterRequest, getCurrentSession } from '../../utils/user'
+import { syncAllFromCloud } from '../../utils/cloud-sync'
 
 Page({
   data: {
@@ -108,6 +109,11 @@ Page({
       }
 
       await register(request)
+      try {
+        await syncAllFromCloud()
+      } catch {
+        // 注册已成功写入云端，拉取失败不阻断
+      }
 
       wx.showToast({
         title: '注册成功',

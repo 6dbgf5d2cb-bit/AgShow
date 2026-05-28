@@ -2,6 +2,7 @@
   "pages": [
     "pages/login/login",
     "pages/register/register",
+    "pages/forgot-password/forgot-password",
     "pages/member/member",
     "pages/admin/admin",
     "pages/user-management/user-management",

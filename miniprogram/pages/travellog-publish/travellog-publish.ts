@@ -175,7 +175,7 @@ Page({
       const tagArray = this.data.tags.split(',').map(t => t.trim()).filter(t => t)
 
       if (this.data.isEdit) {
-        const result = updateLog(this.data.logId, {
+        const result = await updateLog(this.data.logId, {
           title: this.data.title.trim(),
           content: this.data.content.trim(),
           images,
@@ -199,7 +199,7 @@ Page({
           this.setData({ errorMessage: '更新失败，请重试', loading: false })
         }
       } else {
-        const result = createLog(session.userId, {
+        const result = await createLog(session.userId, {
           title: this.data.title.trim(),
           content: this.data.content.trim(),
           images,

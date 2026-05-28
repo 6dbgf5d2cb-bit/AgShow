@@ -280,9 +280,9 @@ Page({
       title: '确认删除',
       content: '确定要删除这篇旅行记吗？删除后无法恢复。',
       confirmColor: '#ff4d4f',
-      success: (res) => {
+      success: async (res) => {
         if (res.confirm) {
-          const success = deleteLog(this.data.logId)
+          const success = await deleteLog(this.data.logId)
           if (success) {
             wx.showToast({
               title: '删除成功',
