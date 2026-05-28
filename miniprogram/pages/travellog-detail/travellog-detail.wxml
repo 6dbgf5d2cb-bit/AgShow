@@ -1,6 +1,9 @@
 <view wx:if="{{log}}" class="container">
   <page-header bind:back="goBack" title="旅行记详情">
-    <view slot="right">
+    <view slot="right" class="header-right">
+      <view class="share-btn" bindtap="onShareMenu">
+        <text>分享</text>
+      </view>
       <view wx:if="{{isPublisher || isAdmin}}" class="comment-toggle" bindtap="toggleComments">
         <text>{{allowComments ? '🔒' : '🔓'}}</text>
       </view>
@@ -75,6 +78,32 @@
         <text>{{log.likeCount}}</text>
       </view>
       <text class="stat-item">💬 {{log.commentCount}}</text>
+    </view>
+
+    <view class="share-section">
+      <button class="share-card-btn" open-type="share">
+        <text class="share-card-icon">↗</text>
+        <text>转发给好友</text>
+      </button>
+      <button
+        wx:if="{{canShareToMp && mpShareEnabled}}"
+        class="share-card-btn mp-btn"
+        bindtap="shareToOfficialAccount"
+        loading="{{sharingToMp}}"
+        disabled="{{sharingToMp}}"
+      >
+        <text class="share-card-icon">📰</text>
+        <text>同步公众号草稿</text>
+      </button>
+      <button
+        wx:if="{{showOfficialAccount}}"
+        class="share-card-btn oa-btn"
+        bindtap="openOfficialAccount"
+      >
+        <text class="share-card-icon">📢</text>
+        <text>{{officialAccountName}}</text>
+      </button>
+      <text wx:if="{{log.mpDraftSharedAt}}" class="mp-draft-hint">已同步草稿，请在公众平台发布</text>
     </view>
 
     <view class="comments-section">

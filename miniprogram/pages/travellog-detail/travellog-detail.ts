@@ -1,6 +1,16 @@
 import { getLogById, pullRemoteLogsAndMerge, getPublisherInfo, incrementViewCount, toggleLike, addComment, deleteComment, deleteLog, toggleComments, TravelLog, TravelLogComment } from '../../utils/travellog'
 import { applyResolvedUrl, resolveMediaUrlMap } from '../../utils/cloud-storage'
 import { getCurrentSession, getUserById, MemberLevel, MemberLevelConfig } from '../../utils/user'
+import {
+  fetchMpShareConfig,
+  isContentApiEnabled,
+  shareLogToOfficialAccount
+} from '../../utils/content-api'
+import {
+  getOfficialAccountDisplayName,
+  isOfficialAccountConfigured,
+  openOfficialAccountProfile
+} from '../../utils/official-account'
 
 Page({
   data: {
@@ -17,7 +27,12 @@ Page({
     comments: [] as TravelLogComment[],
     newComment: '',
     liked: false,
-    allowComments: true
+    allowComments: true,
+    canShareToMp: false,
+    mpShareEnabled: false,
+    sharingToMp: false,
+    officialAccountName: '',
+    showOfficialAccount: false
   },
 
   onLoad(options: { logId?: string }) {
@@ -30,12 +45,34 @@ Page({
       return
     }
 
-    this.setData({ logId: options.logId })
+    this.setData({
+      logId: options.logId,
+      officialAccountName: getOfficialAccountDisplayName(),
+      showOfficialAccount: isOfficialAccountConfigured()
+    })
     this.loadLog()
+    this.loadMpShareConfig()
   },
 
   onShow() {
     this.loadLog()
+    wx.showShareMenu({
+      withShareTicket: true,
+      menus: ['shareAppMessage', 'shareTimeline']
+    })
+  },
+
+  async loadMpShareConfig() {
+    if (!isContentApiEnabled()) {
+      this.setData({ mpShareEnabled: false })
+      return
+    }
+    try {
+      const cfg = await fetchMpShareConfig()
+      this.setData({ mpShareEnabled: cfg.shareToMpEnabled })
+    } catch {
+      this.setData({ mpShareEnabled: false })
+    }
   },
 
   async loadLog() {
@@ -89,7 +126,8 @@ Page({
       hasSession: !!session,
       comments: log.comments,
       allowComments: log.allowComments,
-      liked
+      liked,
+      canShareToMp: (isPublisher || isAdmin) && !!(displayLog.images && displayLog.images.length > 0)
     })
   },
 
@@ -302,5 +340,115 @@ Page({
 
   goBack() {
     wx.navigateBack()
+  },
+
+  onShareAppMessage() {
+    const log = this.data.log
+    const cover =
+      log?.images && log.images.length > 0
+        ? log.images[0]
+        : ''
+    return {
+      title: log?.title || '旅行记',
+      path: `/pages/travellog-detail/travellog-detail?logId=${this.data.logId}`,
+      imageUrl: cover
+    }
+  },
+
+  onShareTimeline() {
+    const log = this.data.log
+    return {
+      title: log?.title || '旅行记',
+      query: `logId=${this.data.logId}`
+    }
+  },
+
+  openOfficialAccount() {
+    openOfficialAccountProfile()
+  },
+
+  onShareMenu() {
+    const items: string[] = ['转发给好友']
+    if (this.data.mpShareEnabled && this.data.canShareToMp) {
+      items.push('同步到公众号草稿')
+    }
+    if (isOfficialAccountConfigured()) {
+      items.push(`打开${this.data.officialAccountName}`)
+    }
+    wx.showActionSheet({
+      itemList: items,
+      success: (res) => {
+        const label = items[res.tapIndex]
+        if (label === '转发给好友') {
+          wx.showShareMenu({ menus: ['shareAppMessage'] })
+          wx.showToast({ title: '请点击右上角转发', icon: 'none' })
+        } else if (label === '同步到公众号草稿') {
+          this.shareToOfficialAccount()
+        } else if (label?.startsWith('打开')) {
+          this.openOfficialAccount()
+        }
+      }
+    })
+  },
+
+  async shareToOfficialAccount() {
+    if (!this.data.canShareToMp) {
+      wx.showToast({ title: '仅作者或管理员可分享', icon: 'none' })
+      return
+    }
+    if (!this.data.mpShareEnabled) {
+      wx.showModal({
+        title: '公众号同步未就绪',
+        content:
+          '请在云托管环境变量中配置公众号 MP_APPID、MP_APP_SECRET，并重新部署服务。也可使用「转发给好友」分享小程序卡片。',
+        showCancel: false
+      })
+      return
+    }
+
+    const log = this.data.log
+    if (!log?.images?.length) {
+      wx.showToast({ title: '需至少一张图片作为封面', icon: 'none' })
+      return
+    }
+
+    const session = getCurrentSession()
+    if (!session) {
+      wx.showToast({ title: '请先登录', icon: 'none' })
+      return
+    }
+
+    wx.showModal({
+      title: '同步到公众号',
+      content: `将生成图文草稿至「${this.data.officialAccountName}」，请在公众平台草稿箱审核后发布。`,
+      success: async (res) => {
+        if (!res.confirm) return
+        this.setData({ sharingToMp: true })
+        wx.showLoading({ title: '生成草稿中...' })
+        try {
+          const imageUrls = (log.images || []).filter((u) => /^https?:\/\//i.test(u))
+          const result = await shareLogToOfficialAccount({
+            logId: this.data.logId,
+            userId: session.userId,
+            authorName: this.data.publisherInfo?.nickname,
+            imageUrls,
+            log
+          })
+          wx.hideLoading()
+          wx.showModal({
+            title: '已创建草稿',
+            content: result.message,
+            showCancel: false
+          })
+          this.loadLog()
+        } catch (e: unknown) {
+          wx.hideLoading()
+          const msg = e instanceof Error ? e.message : '同步失败'
+          wx.showToast({ title: msg, icon: 'none', duration: 3000 })
+        } finally {
+          this.setData({ sharingToMp: false })
+        }
+      }
+    })
   }
 })

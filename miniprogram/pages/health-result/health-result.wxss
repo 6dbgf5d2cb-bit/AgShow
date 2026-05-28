@@ -581,3 +581,141 @@
   color: #555;
   line-height: 1.6;
 }
+
+/* 典籍详论卡片（穷通宝鉴 / 子平真诠 / 三命通会·千里命稿） */
+.classic-card .card-header {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8rpx;
+}
+
+.card-subtitle {
+  font-size: 22rpx;
+  color: #999;
+  font-weight: normal;
+}
+
+.analysis-label {
+  display: block;
+  font-size: 24rpx;
+  font-weight: bold;
+  color: #667eea;
+  margin-bottom: 8rpx;
+}
+
+.geju-badge-row {
+  padding: 0 24rpx 16rpx;
+}
+
+.geju-badge {
+  display: inline-block;
+  padding: 12rpx 28rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  font-size: 30rpx;
+  font-weight: bold;
+  border-radius: 32rpx;
+}
+
+.subsection-title {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+  padding: 24rpx 24rpx 12rpx;
+  border-top: 1rpx solid #f0f0f0;
+  margin-top: 8rpx;
+}
+
+.dayun-item,
+.liunian-item {
+  margin: 0 24rpx 20rpx;
+  padding: 20rpx;
+  background: #f8f9fc;
+  border-radius: 12rpx;
+  border-left: 6rpx solid #667eea;
+}
+
+.dayun-header,
+.liunian-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 12rpx;
+}
+
+.dayun-age,
+.liunian-year {
+  font-size: 26rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.dayun-ganzhi,
+.liunian-ganzhi {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #667eea;
+}
+
+.dayun-shishen,
+.liunian-shishen {
+  font-size: 22rpx;
+  color: #888;
+  background: #eee;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+}
+
+.dayun-tag {
+  font-size: 22rpx;
+  padding: 4rpx 14rpx;
+  border-radius: 8rpx;
+  margin-left: auto;
+}
+
+.dayun-tag--good {
+  background: rgba(82, 196, 26, 0.15);
+  color: #52c41a;
+}
+
+.dayun-tag--warn {
+  background: rgba(250, 173, 20, 0.15);
+  color: #fa8c16;
+}
+
+.dayun-tag--mid {
+  background: rgba(102, 126, 234, 0.15);
+  color: #667eea;
+}
+
+.dayun-detail,
+.liunian-detail {
+  display: block;
+  font-size: 26rpx;
+  color: #555;
+  line-height: 1.65;
+}
+
+.dayun-caution {
+  display: block;
+  font-size: 24rpx;
+  color: #fa8c16;
+  margin-top: 10rpx;
+  line-height: 1.5;
+}
+
+.liunian-theme {
+  display: block;
+  font-size: 26rpx;
+  font-weight: bold;
+  color: #764ba2;
+  margin-bottom: 8rpx;
+}
+
+.liunian-relation {
+  display: block;
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 8rpx;
+}

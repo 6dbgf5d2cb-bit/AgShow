@@ -343,3 +343,65 @@
   font-size: 26rpx;
   color: #999;
 }
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.share-btn {
+  font-size: 26rpx;
+  color: #fff;
+  padding: 8rpx 16rpx;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 24rpx;
+}
+
+.share-section {
+  margin: 24rpx;
+  padding: 24rpx;
+  background: #fff;
+  border-radius: 16rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  align-items: center;
+}
+
+.share-card-btn {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: 26rpx;
+  padding: 16rpx 24rpx;
+  border-radius: 32rpx;
+  background: #f0f4ff;
+  color: #667eea;
+  border: none;
+  line-height: 1.4;
+}
+
+.share-card-btn::after {
+  border: none;
+}
+
+.share-card-btn.mp-btn {
+  background: #fff7e6;
+  color: #fa8c16;
+}
+
+.share-card-btn.oa-btn {
+  background: #f6ffed;
+  color: #52c41a;
+}
+
+.share-card-icon {
+  font-size: 28rpx;
+}
+
+.mp-draft-hint {
+  width: 100%;
+  font-size: 24rpx;
+  color: #52c41a;
+}

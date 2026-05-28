@@ -23,5 +23,15 @@ export const API_CONFIG = {
   alapi: {
     token: '',
     baseUrl: 'https://v2.alapi.cn'
+  },
+  /**
+   * 关联公众号（与小程序需在同一微信开放平台绑定）
+   * username：公众号原始 ID（设置与开发 → 公众号设置 → 账号详情 → 微信号，形如 gh_xxxx）
+   * 服务端同步草稿还需在云托管配置 MP_APPID、MP_APP_SECRET（公众号的 AppID/密钥，非小程序）
+   */
+  officialAccount: {
+    enabled: true,
+    username: '', // 填写 gh_ 开头的原始 ID，用于打开公众号主页
+    displayName: 'AgShow'
   }
 }

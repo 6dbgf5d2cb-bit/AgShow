@@ -119,6 +119,18 @@ baseUrl: 'http://127.0.0.1:3000'  // 开发者工具勾选「不校验合法域�
 | POST | `/api/travel/routes/upsert` | 发布/更新线路 |
 | GET | `/api/travel/logs` | 旅行记列表 |
 | POST | `/api/travel/logs/upsert` | 发布/更新旅行记 |
+| POST | `/api/travel/logs/share-to-mp` | 旅行记 → 公众号图文草稿 |
+| GET | `/api/travel/mp-config` | 是否已配置公众号同步 |
+
+### 旅行记同步到关联公众号
+
+1. 小程序与公众号需在同一**微信开放平台**绑定，且公众号已认证。
+2. 在云托管服务环境变量中增加（使用**公众号**的 AppID/密钥，不是小程序）：
+   - `MP_APPID` — 公众号 AppID
+   - `MP_APP_SECRET` — 公众号 AppSecret
+3. 小程序 `miniprogram/config/api.ts` 中填写 `officialAccount.username`（公众号原始 ID，形如 `gh_xxxx`）。
+4. 作者在旅行记详情点击「同步公众号草稿」，草稿出现在公众平台 → **草稿箱**，审核后发布。
+5. 正文末尾会插入小程序卡片，读者可跳转查看该篇旅行记。
 
 ---
 

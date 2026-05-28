@@ -1,5 +1,6 @@
 import { solarToLunar, lunarToSolar } from './lunar'
 import { computeBaziPillars } from './bazi-pillar'
+import { analyzeBaziClassics, type BaziClassicsBundle } from './bazi-classics'
 
 export type { SymptomItem, SymptomResult, BodyPartReport, OrganReport, ClassicReport } from './tcm-diagnosis'
 export { SYMPTOM_CATEGORIES, SYMPTOMS, analyzeSymptoms } from './tcm-diagnosis'
@@ -62,6 +63,8 @@ export interface BaZiResult {
     yunshi: string
     zonglun: string
   }
+  /** 《三命通会》《千里命稿》《子平真诠》《穷通宝鉴》详论 */
+  classicsAnalysis?: BaziClassicsBundle
   originalDate: string  // 原始输入日期
   originalCalendarType: string  // 原始输入历法类型
   lunarDate: string  // 转换后的农历日期
@@ -632,6 +635,24 @@ export async function generateBaZi(name: string, birthDate: string, birthTime: s
   const daYun = buildDaYunFromPillars(pillars, dayGan)
   const liuNian = buildLiuNianFromPillars(pillars, dayGan)
 
+  const classicsAnalysis = analyzeBaziClassics({
+    yearGan,
+    yearZhi,
+    monthGan,
+    monthZhi,
+    dayGan,
+    dayZhi,
+    hourGan,
+    hourZhi,
+    wuxingCount,
+    xiyongShen,
+    startAge,
+    qiYunDesc: pillars.qiYun.description,
+    daYun,
+    liuNian,
+    pillars
+  })
+
   const hourLabel = timeSlot
     ? `${timeSlot.name}(${timeSlot.range})`
     : birthTime
@@ -671,7 +692,9 @@ export async function generateBaZi(name: string, birthDate: string, birthTime: s
     
     // 《滴天髓》运势分析
     ditianSuiAnalysis,
-    
+
+    classicsAnalysis,
+
     // 原始日期信息（用于展示）
     originalDate: birthDate,
     originalCalendarType: calendarType,

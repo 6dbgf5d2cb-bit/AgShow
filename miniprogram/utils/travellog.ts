@@ -34,6 +34,9 @@ export interface TravelLog {
   allowComments: boolean
   tags: string[]
   location?: string
+  /** 最近一次同步到公众号草稿的 media_id */
+  mpDraftMediaId?: string
+  mpDraftSharedAt?: number
 }
 
 export interface CreateTravelLogRequest {

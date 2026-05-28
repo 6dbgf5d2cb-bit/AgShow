@@ -32,3 +32,34 @@ export async function pushLogToRemote(log: TravelLog): Promise<TravelLog> {
 export function contentRevision(item: { updateTime?: number; publishTime?: number }): number {
   return item.updateTime || item.publishTime || 0
 }
+
+export interface ShareLogToMpResult {
+  draftMediaId?: string
+  message: string
+  configured?: boolean
+}
+
+export async function fetchMpShareConfig(): Promise<{ shareToMpEnabled: boolean }> {
+  try {
+    return await remoteRequest<{ shareToMpEnabled: boolean }>('/api/travel/mp-config', 'GET')
+  } catch {
+    return { shareToMpEnabled: false }
+  }
+}
+
+/** 将旅行记生成关联公众号图文草稿（需服务端配置公众号密钥） */
+export async function shareLogToOfficialAccount(params: {
+  logId: string
+  userId: string
+  authorName?: string
+  imageUrls: string[]
+  log?: TravelLog
+}): Promise<ShareLogToMpResult> {
+  return remoteRequest<ShareLogToMpResult>('/api/travel/logs/share-to-mp', 'POST', {
+    logId: params.logId,
+    userId: params.userId,
+    authorName: params.authorName,
+    imageUrls: params.imageUrls,
+    log: params.log
+  })
+}

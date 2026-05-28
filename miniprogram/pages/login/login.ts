@@ -1,4 +1,13 @@
-import { login, getCurrentSession, LoginRequest, loginWithWeChat, loginWithPhoneNumber } from '../../utils/user'
+import {
+  login,
+  getCurrentSession,
+  LoginRequest,
+  loginWithWeChat,
+  loginWithPhoneNumber,
+  resetDefaultAdminPassword,
+  DEFAULT_ADMIN_USERNAME,
+  DEFAULT_ADMIN_PASSWORD
+} from '../../utils/user'
 import {
   wxLoginAsync,
   getUserProfileAsync,
@@ -24,6 +33,8 @@ Page({
     privacyTip: '',
     showPassword: false,
     showAccountLogin: false,
+    defaultAdminUsername: DEFAULT_ADMIN_USERNAME,
+    defaultAdminPassword: DEFAULT_ADMIN_PASSWORD,
     showPhoneModal: false,
     manualPhone: ''
   },
@@ -259,6 +270,25 @@ Page({
   },
 
   goToForgotPassword() {
-    wx.showToast({ title: '忘记密码功能开发中', icon: 'none' })
+    const name = this.data.username.trim().toLowerCase()
+    if (name === DEFAULT_ADMIN_USERNAME || !name) {
+      wx.showModal({
+        title: '重置管理员密码',
+        content: `将把管理员账号密码重置为：${DEFAULT_ADMIN_PASSWORD}\n用户名：${DEFAULT_ADMIN_USERNAME}`,
+        confirmText: '重置',
+        success: (res) => {
+          if (!res.confirm) return
+          resetDefaultAdminPassword()
+          this.setData({
+            username: DEFAULT_ADMIN_USERNAME,
+            password: DEFAULT_ADMIN_PASSWORD,
+            errorMessage: ''
+          })
+          wx.showToast({ title: '已重置，请登录', icon: 'success' })
+        }
+      })
+      return
+    }
+    wx.showToast({ title: '请联系管理员重置密码', icon: 'none' })
   }
 })

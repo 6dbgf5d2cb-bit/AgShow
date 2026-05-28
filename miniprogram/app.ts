@@ -2,6 +2,7 @@ import {
   getCurrentSession,
   syncSessionUserToRegistry,
   repairDefaultMemberPermissions,
+  repairDefaultAdminAccount,
   syncCurrentUserFromRemote
 } from './utils/user'
 import { getRequiredCloudEnvId, isCloudRunEnabled } from './utils/cloud-request'
@@ -26,6 +27,7 @@ App<IAppOption>({
     wx.setStorageSync('logs', logs)
 
     repairDefaultMemberPermissions()
+    repairDefaultAdminAccount()
     syncSessionUserToRegistry()
     void syncCurrentUserFromRemote()
 

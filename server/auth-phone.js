@@ -10,6 +10,7 @@
 const http = require('http')
 const fs = require('fs')
 const path = require('path')
+const { createTravelLogDraft, isMpShareConfigured } = require('./mp-article')
 
 const APPID = process.env.WX_APPID || ''
 const SECRET = process.env.WX_SECRET || ''
@@ -158,6 +159,20 @@ function listAllLogs() {
   return Object.values(map).sort((a, b) => (b.publishTime || 0) - (a.publishTime || 0))
 }
 
+function getLogById(logId) {
+  const map = loadIdMap(LOGS_FILE)
+  return map[logId] || null
+}
+
+function canUserShareLog(userId, log) {
+  if (!userId || !log) return false
+  const users = loadUserMap()
+  const user = users[userId]
+  if (!user) return false
+  if (Array.isArray(user.roles) && user.roles.includes('admin')) return true
+  return log.publisherId === userId
+}
+
 const server = http.createServer(async (req, res) => {
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
@@ -239,6 +254,44 @@ const server = http.createServer(async (req, res) => {
       return
     }
 
+    if (pathname === '/api/travel/logs/share-to-mp' && req.method === 'POST') {
+      const logId = body.logId
+      const userId = body.userId
+      const log = getLogById(logId) || body.log
+      if (!log || !log.logId) {
+        send(res, 400, { message: '旅行记不存在' })
+        return
+      }
+      if (!canUserShareLog(userId, log)) {
+        send(res, 403, { message: '仅作者或管理员可分享到公众号' })
+        return
+      }
+      if (!isMpShareConfigured()) {
+        send(res, 503, {
+          message: '服务端未配置公众号 MP_APPID / MP_APP_SECRET',
+          configured: false
+        })
+        return
+      }
+      const imageUrls = Array.isArray(body.imageUrls) ? body.imageUrls : log.images || []
+      const result = await createTravelLogDraft(log, imageUrls, {
+        authorName: body.authorName || ''
+      })
+      const map = loadIdMap(LOGS_FILE)
+      if (map[log.logId]) {
+        map[log.logId].mpDraftMediaId = result.draftMediaId
+        map[log.logId].mpDraftSharedAt = Date.now()
+        saveIdMap(LOGS_FILE, map)
+      }
+      send(res, 200, { ...result, configured: true })
+      return
+    }
+
+    if (pathname === '/api/travel/mp-config' && req.method === 'GET') {
+      send(res, 200, { shareToMpEnabled: isMpShareConfigured() })
+      return
+    }
+
     send(res, 404, { message: 'not found', path: pathname })
   } catch (e) {
     console.error('[api]', pathname, e)
@@ -262,6 +315,9 @@ server.listen(PORT, HOST, () => {
   console.log('  POST /api/travel/routes/upsert')
   console.log('  GET  /api/travel/logs')
   console.log('  POST /api/travel/logs/upsert')
+  console.log('  POST /api/travel/logs/share-to-mp')
+  console.log('  GET  /api/travel/mp-config')
+  console.log(`  MP share: ${isMpShareConfigured() ? 'enabled' : 'disabled (set MP_APPID, MP_APP_SECRET)'}`)
   console.log(`  Users: ${USERS_FILE}`)
   console.log(`  Routes: ${ROUTES_FILE}`)
   console.log(`  Logs: ${LOGS_FILE}`)

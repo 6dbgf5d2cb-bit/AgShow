@@ -209,18 +209,179 @@
         </view>
       </view>
 
+      <!-- 《穷通宝鉴》气候与五行喜忌 -->
+      <view wx:if="{{baziResult.classicsAnalysis}}" class="card classic-card">
+        <view class="card-header">
+          <text class="card-title">🌡️ 《穷通宝鉴》调候与喜忌</text>
+          <text class="card-subtitle">论气候寒暖燥湿，定五行喜忌</text>
+        </view>
+        <view class="analysis-section">
+          <text class="analysis-label">命局气候</text>
+          <text class="analysis-text">{{baziResult.classicsAnalysis.qiongTongBaoJian.climateDesc}}</text>
+        </view>
+        <view class="analysis-section">
+          <text class="analysis-label">寒暖判断</text>
+          <text class="analysis-text">{{baziResult.classicsAnalysis.qiongTongBaoJian.hanNuan}}</text>
+        </view>
+        <view class="analysis-section">
+          <text class="analysis-label">调候要旨</text>
+          <text class="analysis-text">{{baziResult.classicsAnalysis.qiongTongBaoJian.diaoHou}}</text>
+        </view>
+        <view class="analysis-section">
+          <text class="analysis-label">喜忌总论</text>
+          <text class="analysis-text">{{baziResult.classicsAnalysis.qiongTongBaoJian.xiJi}}</text>
+        </view>
+        <view class="analysis-section">
+          <text class="analysis-label">五行宜</text>
+          <text class="analysis-text">{{baziResult.classicsAnalysis.qiongTongBaoJian.wuXingFavor}}</text>
+        </view>
+        <view class="analysis-section">
+          <text class="analysis-label">五行忌</text>
+          <text class="analysis-text">{{baziResult.classicsAnalysis.qiongTongBaoJian.wuXingAvoid}}</text>
+        </view>
+        <view class="analysis-section">
+          <text class="analysis-label">调候要点</text>
+          <text class="analysis-text">{{baziResult.classicsAnalysis.qiongTongBaoJian.tiaoHouYao}}</text>
+        </view>
+        <view class="suggestions-list">
+          <view wx:for="{{baziResult.classicsAnalysis.qiongTongBaoJian.practical}}" wx:key="index" class="suggestion-item">
+            <text class="suggestion-icon">◆</text>
+            <text class="suggestion-text">{{item}}</text>
+          </view>
+        </view>
+        <view class="poem-section">
+          <text class="poem-text">{{baziResult.classicsAnalysis.qiongTongBaoJian.classicQuote}}</text>
+        </view>
+      </view>
+
+      <!-- 《子平真诠》格局详论 -->
+      <view wx:if="{{baziResult.classicsAnalysis}}" class="card classic-card">
+        <view class="card-header">
+          <text class="card-title">🏛️ 《子平真诠》格局详论</text>
+          <text class="card-subtitle">月令定格，用神成败</text>
+        </view>
+        <view class="geju-badge-row">
+          <text class="geju-badge">{{baziResult.classicsAnalysis.ziPingZhenQuan.geJuName}}</text>
+        </view>
+        <view class="analysis-section">
+          <text class="analysis-label">用神</text>
+          <text class="analysis-text">{{baziResult.classicsAnalysis.ziPingZhenQuan.yongShen}}</text>
+        </view>
+        <view class="analysis-section">
+          <text class="analysis-label">相神</text>
+          <text class="analysis-text">{{baziResult.classicsAnalysis.ziPingZhenQuan.xiangShen}}</text>
+        </view>
+        <view class="analysis-section">
+          <text class="analysis-label">体用</text>
+          <text class="analysis-text">{{baziResult.classicsAnalysis.ziPingZhenQuan.tiYong}}</text>
+        </view>
+        <view class="analysis-section">
+          <text class="analysis-label">成格</text>
+          <text class="analysis-text">{{baziResult.classicsAnalysis.ziPingZhenQuan.chengGe}}</text>
+        </view>
+        <view class="analysis-section">
+          <text class="analysis-label">破格之险</text>
+          <text class="analysis-text">{{baziResult.classicsAnalysis.ziPingZhenQuan.poGeRisk}}</text>
+        </view>
+        <view class="analysis-section">
+          <text class="analysis-label">清浊</text>
+          <text class="analysis-text">{{baziResult.classicsAnalysis.ziPingZhenQuan.qingZhuo}}</text>
+        </view>
+        <view class="analysis-section">
+          <text class="analysis-label">顺逆</text>
+          <text class="analysis-text">{{baziResult.classicsAnalysis.ziPingZhenQuan.shunNi}}</text>
+        </view>
+        <view class="analysis-section">
+          <text class="analysis-label">行运喜</text>
+          <text class="analysis-text">{{baziResult.classicsAnalysis.ziPingZhenQuan.yunXi}}</text>
+        </view>
+        <view class="analysis-section">
+          <text class="analysis-label">行运忌</text>
+          <text class="analysis-text">{{baziResult.classicsAnalysis.ziPingZhenQuan.yunJi}}</text>
+        </view>
+        <view class="analysis-section">
+          <text class="analysis-label">事业取向</text>
+          <text class="analysis-text">{{baziResult.classicsAnalysis.ziPingZhenQuan.social}}</text>
+        </view>
+        <view class="analysis-section">
+          <text class="analysis-label">婚姻感情</text>
+          <text class="analysis-text">{{baziResult.classicsAnalysis.ziPingZhenQuan.marriage}}</text>
+        </view>
+        <view class="poem-section">
+          <text class="poem-text">{{baziResult.classicsAnalysis.ziPingZhenQuan.classicTheory}}</text>
+        </view>
+      </view>
+
       <view wx:if="{{baziResult.detailedAnalysis}}" class="card">
         <view class="card-header">
-          <text class="card-title">🏛️ 格局分析</text>
+          <text class="card-title">🏛️ 格局概要（渊海子平）</text>
         </view>
         <view class="analysis-section">
           <text class="analysis-text">{{baziResult.detailedAnalysis.geJu}}</text>
         </view>
       </view>
 
+      <!-- 《三命通会》《千里命稿》大运流年 -->
+      <view wx:if="{{baziResult.classicsAnalysis}}" class="card classic-card">
+        <view class="card-header">
+          <text class="card-title">📈 《三命通会》《千里命稿》大运流年</text>
+          <text class="card-subtitle">十步大运 · 近期流年详论</text>
+        </view>
+        <view class="analysis-section">
+          <text class="analysis-text">{{baziResult.classicsAnalysis.sanMingQianLi.summary}}</text>
+        </view>
+        <view class="analysis-section">
+          <text class="analysis-label">起运交运</text>
+          <text class="analysis-text">{{baziResult.classicsAnalysis.sanMingQianLi.qiYunTheory}}</text>
+        </view>
+        <view class="analysis-section">
+          <text class="analysis-label">交脱大运</text>
+          <text class="analysis-text">{{baziResult.classicsAnalysis.sanMingQianLi.jiaoTuoYun}}</text>
+        </view>
+        <view class="analysis-section">
+          <text class="analysis-label">当前运程</text>
+          <text class="analysis-text">{{baziResult.classicsAnalysis.sanMingQianLi.decadeTrend}}</text>
+        </view>
+
+        <view class="subsection-title">十步大运详论</view>
+        <view wx:for="{{baziResult.classicsAnalysis.sanMingQianLi.daYunItems}}" wx:key="ageRange" class="dayun-item">
+          <view class="dayun-header">
+            <text class="dayun-age">{{item.ageRange}}</text>
+            <text class="dayun-ganzhi">{{item.ganZhi}}</text>
+            <text class="dayun-shishen">{{item.shiShen}}</text>
+            <text class="dayun-tag dayun-tag--{{item.theme === '吉运' ? 'good' : item.theme === '慎运' ? 'warn' : 'mid'}}">{{item.theme}}</text>
+          </view>
+          <text class="dayun-detail">{{item.detail}}</text>
+          <text class="dayun-caution">⚠ {{item.caution}}</text>
+        </view>
+
+        <view class="subsection-title">流年详论</view>
+        <view wx:for="{{baziResult.classicsAnalysis.sanMingQianLi.liuNianItems}}" wx:key="year" class="liunian-item">
+          <view class="liunian-header">
+            <text class="liunian-year">{{item.year}}年</text>
+            <text class="liunian-ganzhi">{{item.ganZhi}}</text>
+            <text class="liunian-shishen">{{item.shiShen}}</text>
+          </view>
+          <text class="liunian-theme">{{item.theme}}</text>
+          <text class="liunian-detail">{{item.detail}}</text>
+          <text wx:if="{{item.relationToDaYun}}" class="liunian-relation">与大运：{{item.relationToDaYun}}</text>
+        </view>
+
+        <view class="subsection-title">人生阶段</view>
+        <view wx:for="{{baziResult.classicsAnalysis.sanMingQianLi.lifeStages}}" wx:key="index" class="suggestion-item">
+          <text class="suggestion-icon">▸</text>
+          <text class="suggestion-text">{{item}}</text>
+        </view>
+        <view class="subsection-title">运势须知</view>
+        <view wx:for="{{baziResult.classicsAnalysis.sanMingQianLi.cautions}}" wx:key="index" class="suggestion-item">
+          <text class="suggestion-icon">!</text>
+          <text class="suggestion-text">{{item}}</text>
+        </view>
+      </view>
+
       <view wx:if="{{baziResult.detailedAnalysis}}" class="card">
         <view class="card-header">
-          <text class="card-title">🌟 运势分析</text>
+          <text class="card-title">🌟 运势概要（渊海子平）</text>
         </view>
         <view class="analysis-section">
           <text class="analysis-text">{{baziResult.detailedAnalysis.yunShi}}</text>
@@ -311,6 +472,34 @@
             <view class="reference-info">
               <text class="reference-title">滴天髓</text>
               <text class="reference-desc">命理哲学巅峰之作，京图著，通神论性情</text>
+            </view>
+          </view>
+          <view class="reference-item">
+            <text class="reference-icon">📖</text>
+            <view class="reference-info">
+              <text class="reference-title">三命通会</text>
+              <text class="reference-desc">明代万民英辑，汇命理大全，论纳音大运</text>
+            </view>
+          </view>
+          <view class="reference-item">
+            <text class="reference-icon">📖</text>
+            <view class="reference-info">
+              <text class="reference-title">千里命稿</text>
+              <text class="reference-desc">韦千里著，大运流年断法精要</text>
+            </view>
+          </view>
+          <view class="reference-item">
+            <text class="reference-icon">📖</text>
+            <view class="reference-info">
+              <text class="reference-title">子平真诠</text>
+              <text class="reference-desc">沈孝瞻著，格局用神理论正宗</text>
+            </view>
+          </view>
+          <view class="reference-item">
+            <text class="reference-icon">📖</text>
+            <view class="reference-info">
+              <text class="reference-title">穷通宝鉴</text>
+              <text class="reference-desc">余春台辑，调候寒暖、五行喜忌专论</text>
             </view>
           </view>
         </view>

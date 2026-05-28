@@ -135,6 +135,26 @@ function generateSalt(): string {
   return Math.random().toString(36).substr(2, 16)
 }
 
+/** 内置管理员账号（首次安装 / 重置后） */
+export const DEFAULT_ADMIN_USERNAME = 'admin'
+export const DEFAULT_ADMIN_PASSWORD = 'admin123'
+export const DEFAULT_ADMIN_USER_ID = 'UADMIN000001'
+
+function isAdminUser(user: Partial<User>): boolean {
+  const name = (user.username || '').toLowerCase()
+  return name === DEFAULT_ADMIN_USERNAME || user.userId === DEFAULT_ADMIN_USER_ID
+}
+
+/** 云端同步后密码被写成 changeme 或为空 */
+function isCorruptedAdminPassword(user: User): boolean {
+  if (!isAdminUser(user)) return false
+  if (!user.passwordHash) return true
+  if (user.passwordSalt && hashPassword('changeme', user.passwordSalt) === user.passwordHash) {
+    return true
+  }
+  return false
+}
+
 function hashPassword(password: string, salt: string): string {
   let hash = (password || 'x') + (salt || 'y')
   for (let i = 0; i < 1000; i++) {
@@ -163,10 +183,18 @@ function normalizeStoredUser(raw: Partial<User>): User {
   const roles: UserRole[] =
     Array.isArray(raw.roles) && raw.roles.length > 0
       ? raw.roles
-      : username.toLowerCase() === 'admin'
+      : username.toLowerCase() === DEFAULT_ADMIN_USERNAME
         ? ['admin']
         : ['member']
   const now = Date.now()
+
+  const passwordSalt = raw.passwordSalt || generateSalt()
+  let passwordHash = raw.passwordHash
+  if (!passwordHash) {
+    passwordHash = isAdminUser({ username, userId: raw.userId })
+      ? hashPassword(DEFAULT_ADMIN_PASSWORD, passwordSalt)
+      : hashPassword('changeme', passwordSalt)
+  }
 
   return {
     userId: raw.userId || generateUserId(),
@@ -175,12 +203,8 @@ function normalizeStoredUser(raw: Partial<User>): User {
     email: raw.email || '',
     realName: raw.realName || '',
     idCardEncrypted: raw.idCardEncrypted || '',
-    passwordSalt: raw.passwordSalt || generateSalt(),
-    passwordHash:
-      raw.passwordHash ||
-      (raw.passwordSalt
-        ? hashPassword('changeme', raw.passwordSalt)
-        : hashPassword('changeme', generateSalt())),
+    passwordSalt,
+    passwordHash,
     status: raw.status || 'normal',
     registerIp: raw.registerIp || getCurrentIp(),
     lastLoginIp: raw.lastLoginIp || '',
@@ -385,8 +409,43 @@ function syncUserToRemoteIfEnabled(user: User): void {
   })
 }
 
+function repairDefaultAdminInList(users: User[]): { users: User[]; changed: boolean } {
+  let changed = false
+  const next = users.map((u) => {
+    if (!isCorruptedAdminPassword(u)) return u
+    const salt = u.passwordSalt || generateSalt()
+    changed = true
+    return normalizeStoredUser({
+      ...u,
+      userId: u.userId || DEFAULT_ADMIN_USER_ID,
+      username: DEFAULT_ADMIN_USERNAME,
+      passwordSalt: salt,
+      passwordHash: hashPassword(DEFAULT_ADMIN_PASSWORD, salt),
+      roles: u.roles?.includes('admin') ? u.roles : [...(u.roles || []), 'admin'],
+      loginFailCount: 0,
+      lockTime: 0,
+      status: u.status === 'cancelled' ? 'normal' : u.status || 'normal'
+    })
+  })
+  return { users: next, changed }
+}
+
+/** 启动时修复被云端同步破坏的管理员密码 */
+export function repairDefaultAdminAccount(): void {
+  let users = readAllUsersFromRegistry()
+  const { users: repaired, changed: repairedChanged } = repairDefaultAdminInList(users)
+  users = repaired
+  const before = users.length
+  users = ensureDefaultAdminInList(users)
+  if (repairedChanged || users.length > before) {
+    saveMockUsers(users)
+    const admin = users.find((u) => isAdminUser(u))
+    if (admin) syncUserToRemoteIfEnabled(admin)
+  }
+}
+
 function ensureDefaultAdminInList(users: User[]): User[] {
-  const hasAdmin = users.some((u) => (u.username || '').toLowerCase() === 'admin')
+  const hasAdmin = users.some((u) => isAdminUser(u))
   if (!hasAdmin) {
     const admin = createDefaultAdmin()
     users.push(admin)
@@ -398,11 +457,11 @@ function ensureDefaultAdminInList(users: User[]): User[] {
 
 function createDefaultAdmin(): User {
   const salt = generateSalt()
-  const passwordHash = hashPassword('admin123', salt)
+  const passwordHash = hashPassword(DEFAULT_ADMIN_PASSWORD, salt)
   
   return {
-    userId: 'UADMIN000001',
-    username: 'admin',
+    userId: DEFAULT_ADMIN_USER_ID,
+    username: DEFAULT_ADMIN_USERNAME,
     phone: '13800138000',
     email: 'admin@example.com',
     realName: '系统管理员',
@@ -462,6 +521,9 @@ function getMockUsers(): User[] {
     })
 
     const beforeAdminCheck = users.length
+    const repaired = repairDefaultAdminInList(users)
+    users = repaired.users
+    if (repaired.changed) changed = true
     users = ensureDefaultAdminInList(users)
     if (users.length > beforeAdminCheck) {
       changed = true
@@ -849,9 +911,38 @@ export async function loginWithPhoneNumber(request: PhoneLoginRequest): Promise<
   return persistSession(upsertUserInStorage(user), true)
 }
 
+/** 将管理员密码重置为默认 admin123（忘记密码时使用） */
+export function resetDefaultAdminPassword(): boolean {
+  let users = readAllUsersFromRegistry()
+  const idx = users.findIndex((u) => isAdminUser(u))
+  const salt = generateSalt()
+  const passwordHash = hashPassword(DEFAULT_ADMIN_PASSWORD, salt)
+  if (idx < 0) {
+    const admin = createDefaultAdmin()
+    saveUserRecord(admin)
+    saveMockUsers(ensureDefaultAdminInList([admin]))
+    syncUserToRemoteIfEnabled(admin)
+    return true
+  }
+  users[idx] = normalizeStoredUser({
+    ...users[idx],
+    username: DEFAULT_ADMIN_USERNAME,
+    passwordSalt: salt,
+    passwordHash,
+    roles: users[idx].roles?.includes('admin') ? users[idx].roles : [...(users[idx].roles || []), 'admin'],
+    loginFailCount: 0,
+    lockTime: 0,
+    status: 'normal'
+  })
+  saveMockUsers(users)
+  syncUserToRemoteIfEnabled(users[idx])
+  return true
+}
+
 export async function login(request: LoginRequest): Promise<UserSession> {
   const users = getMockUsers()
-  const user = users.find(u => u.username === request.username)
+  const nameKey = request.username.trim().toLowerCase()
+  const user = users.find((u) => (u.username || '').toLowerCase() === nameKey)
 
   if (!user) {
     throw new Error('用户名不存在')
@@ -881,10 +972,13 @@ export async function login(request: LoginRequest): Promise<UserSession> {
     saveMockUsers(users)
     
     const remainingAttempts = Math.max(0, 5 - user.loginFailCount)
+    const adminHint = isAdminUser(user)
+      ? `默认密码为 ${DEFAULT_ADMIN_PASSWORD}，可在登录页「忘记密码」重置。`
+      : ''
     if (remainingAttempts > 0) {
-      throw new Error(`密码错误，还有${remainingAttempts}次尝试机会`)
+      throw new Error(`密码错误，还有${remainingAttempts}次尝试机会。${adminHint}`)
     } else {
-      throw new Error('密码错误次数过多，账户已锁定30分钟')
+      throw new Error(`密码错误次数过多，账户已锁定30分钟。${adminHint}`)
     }
   }
 
@@ -1176,7 +1270,18 @@ export function mergeUsersIntoLocalRegistry(remoteUsers: User[]): User[] {
     const local = users[index]
     // 仅当云端版本更新时才覆盖本地，避免刚做的管理操作被旧数据冲掉
     if (userRevision(normalized) > userRevision(local)) {
-      saveUserRecord(normalizeStoredUser({ ...local, ...normalized }))
+      const merged = { ...local, ...normalized }
+      const remoteCorrupted =
+        isAdminUser(merged) &&
+        normalized.passwordSalt &&
+        hashPassword('changeme', normalized.passwordSalt) === normalized.passwordHash
+      if (!normalized.passwordHash || remoteCorrupted) {
+        if (local.passwordHash) {
+          merged.passwordHash = local.passwordHash
+          merged.passwordSalt = local.passwordSalt
+        }
+      }
+      saveUserRecord(normalizeStoredUser(merged))
     }
   }
 
