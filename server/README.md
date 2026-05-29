@@ -17,8 +17,8 @@
 | 服务名称 | `agshow-api`（须与小程序 `config/api.ts` 中 `cloudService` 一致） |
 | 端口 | `80` |
 | 上传方式 | **上传代码包** 或 **Git / 流水线构建 Dockerfile** |
-| 代码目录 | 本仓库 `server/` 目录 |
-| Dockerfile | 使用 `server/Dockerfile` |
+| 代码目录 | 本仓库 `server/` 目录（须包含全部 `*.js`，见 Dockerfile） |
+| Dockerfile | 使用 `server/Dockerfile`（会复制 `auth-phone.js`、`mp-article.js`、`password-reset.js` 等） |
 
 ### 3. 环境变量（服务设置 → 环境变量）
 

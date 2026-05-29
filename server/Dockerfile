@@ -5,7 +5,7 @@ WORKDIR /app
 COPY package.json ./
 RUN npm install --production
 
-COPY auth-phone.js ./
+COPY *.js ./
 COPY container.config.json ./
 
 RUN mkdir -p /app/data
