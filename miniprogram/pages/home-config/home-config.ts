@@ -1,21 +1,33 @@
-import { HomePageConfigs, ModuleConfigs, PermissionAction, HomePageConfig, saveHomePageConfigsToStorage } from '../../utils/user'
+import {
+  getHomePageConfigs,
+  getModuleConfigs,
+  PermissionAction,
+  HomePageConfig,
+  saveHomePageConfigsToStorage,
+  pullAdminSystemConfigAndApply
+} from '../../utils/user'
 
 Page({
   data: {
     configs: [] as HomePageConfig[]
   },
 
-  onLoad() {
+  async onLoad() {
+    try {
+      await pullAdminSystemConfigAndApply()
+    } catch {
+      // 离线时沿用本地
+    }
     this.loadConfigs()
   },
 
   loadConfigs() {
-    const configs = JSON.parse(JSON.stringify(HomePageConfigs))
+    const configs = JSON.parse(JSON.stringify(getHomePageConfigs()))
     this.setData({ configs })
   },
 
   getModuleName(moduleId: string): string {
-    const module = ModuleConfigs.find(m => m.id === moduleId)
+    const module = getModuleConfigs().find(m => m.id === moduleId)
     return module?.name || moduleId
   },
 

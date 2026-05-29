@@ -16,6 +16,8 @@ const {
   handleResetPassword,
   handleResetByWechatPhone
 } = require('./password-reset')
+const { mergeUserUpsert, mergeContentUpsert } = require('./admin-merge')
+const { getSystemConfig, saveSystemConfig } = require('./system-config')
 
 const APPID = process.env.WX_APPID || ''
 const SECRET = process.env.WX_SECRET || ''
@@ -125,7 +127,8 @@ function upsertUserInMap(user) {
     throw new Error('userId required')
   }
   const map = loadUserMap()
-  map[user.userId] = { ...map[user.userId], ...user, updatedAt: Date.now() }
+  const existing = map[user.userId]
+  map[user.userId] = mergeUserUpsert(existing, user)
   saveUserMap(map)
   return map[user.userId]
 }
@@ -153,7 +156,8 @@ function saveIdMap(filePath, map) {
 function upsertRouteInMap(route) {
   if (!route || !route.routeId) throw new Error('routeId required')
   const map = loadIdMap(ROUTES_FILE)
-  map[route.routeId] = { ...map[route.routeId], ...route, updateTime: Date.now() }
+  const existing = map[route.routeId]
+  map[route.routeId] = mergeContentUpsert(existing, route)
   saveIdMap(ROUTES_FILE, map)
   return map[route.routeId]
 }
@@ -166,7 +170,8 @@ function listAllRoutes() {
 function upsertLogInMap(log) {
   if (!log || !log.logId) throw new Error('logId required')
   const map = loadIdMap(LOGS_FILE)
-  map[log.logId] = { ...map[log.logId], ...log, updateTime: Date.now() }
+  const existing = map[log.logId]
+  map[log.logId] = mergeContentUpsert(existing, log)
   saveIdMap(LOGS_FILE, map)
   return map[log.logId]
 }
@@ -279,6 +284,17 @@ const server = http.createServer(async (req, res) => {
       return
     }
 
+    if (pathname === '/api/admin/system-config' && req.method === 'GET') {
+      send(res, 200, { config: getSystemConfig() })
+      return
+    }
+
+    if (pathname === '/api/admin/system-config' && req.method === 'POST') {
+      const config = saveSystemConfig(body)
+      send(res, 200, { config })
+      return
+    }
+
     if (pathname === '/api/users/delete' && req.method === 'POST') {
       const ids = Array.isArray(body.userIds) ? body.userIds : []
       const map = loadUserMap()
@@ -376,6 +392,8 @@ server.listen(PORT, HOST, () => {
   console.log('  GET  /api/users')
   console.log('  GET  /api/users/lookup?openId=&phone=&username=')
   console.log('  POST /api/users/upsert')
+  console.log('  GET  /api/admin/system-config')
+  console.log('  POST /api/admin/system-config')
   console.log('  POST /api/users/delete')
   console.log('  GET  /api/travel/routes')
   console.log('  POST /api/travel/routes/upsert')

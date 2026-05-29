@@ -1,16 +1,27 @@
-import { ModuleConfigs, PermissionAction, ModuleConfig, saveModuleConfigsToStorage } from '../../utils/user'
+import {
+  getModuleConfigs,
+  PermissionAction,
+  ModuleConfig,
+  saveModuleConfigsToStorage,
+  pullAdminSystemConfigAndApply
+} from '../../utils/user'
 
 Page({
   data: {
     modules: [] as ModuleConfig[]
   },
 
-  onLoad() {
+  async onLoad() {
+    try {
+      await pullAdminSystemConfigAndApply()
+    } catch {
+      // 离线时沿用本地
+    }
     this.loadModules()
   },
 
   loadModules() {
-    const modules = JSON.parse(JSON.stringify(ModuleConfigs))
+    const modules = JSON.parse(JSON.stringify(getModuleConfigs()))
     this.setData({ modules })
   },
 

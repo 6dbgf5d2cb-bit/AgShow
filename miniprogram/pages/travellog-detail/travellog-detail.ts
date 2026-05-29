@@ -259,7 +259,9 @@ Page({
   },
 
   toggleComments() {
-    const success = toggleComments(this.data.logId)
+    const success = toggleComments(this.data.logId, {
+      fromAdmin: !!this.data.isAdmin
+    })
     if (success) {
       this.setData({ allowComments: !this.data.allowComments })
       wx.showToast({
@@ -282,7 +284,9 @@ Page({
       confirmColor: '#ff4d4f',
       success: async (res) => {
         if (res.confirm) {
-          const success = await deleteLog(this.data.logId)
+          const success = await deleteLog(this.data.logId, {
+            fromAdmin: !!this.data.isAdmin
+          })
           if (success) {
             wx.showToast({
               title: '删除成功',

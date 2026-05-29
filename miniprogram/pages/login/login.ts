@@ -5,8 +5,7 @@ import {
   loginWithWeChat,
   loginWithPhoneNumber,
   resetDefaultAdminPassword,
-  DEFAULT_ADMIN_USERNAME,
-  DEFAULT_ADMIN_PASSWORD
+  DEFAULT_ADMIN_USERNAME
 } from '../../utils/user'
 import {
   wxLoginAsync,
@@ -35,8 +34,6 @@ Page({
     privacyTip: '',
     showPassword: false,
     showAccountLogin: false,
-    defaultAdminUsername: DEFAULT_ADMIN_USERNAME,
-    defaultAdminPassword: DEFAULT_ADMIN_PASSWORD,
     showPhoneModal: false,
     manualPhone: ''
   },
@@ -279,17 +276,17 @@ Page({
     if (name === DEFAULT_ADMIN_USERNAME) {
       wx.showModal({
         title: '重置管理员密码',
-        content: `将把管理员账号密码重置为：${DEFAULT_ADMIN_PASSWORD}\n用户名：${DEFAULT_ADMIN_USERNAME}`,
+        content: `将把账号「${DEFAULT_ADMIN_USERNAME}」的密码重置为初始密码。重置后请立即登录并在设置中修改密码。`,
         confirmText: '重置',
         success: (res) => {
           if (!res.confirm) return
           resetDefaultAdminPassword()
           this.setData({
             username: DEFAULT_ADMIN_USERNAME,
-            password: DEFAULT_ADMIN_PASSWORD,
+            password: '',
             errorMessage: ''
           })
-          wx.showToast({ title: '已重置，请登录', icon: 'success' })
+          wx.showToast({ title: '已重置，请输入初始密码登录', icon: 'success' })
         }
       })
       return

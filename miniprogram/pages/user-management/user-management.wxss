@@ -76,7 +76,8 @@ page {
 
 .batch-actions {
   display: flex;
-  gap: 16rpx;
+  flex-wrap: wrap;
+  gap: 12rpx;
   flex: 1;
 }
 
@@ -91,6 +92,11 @@ page {
 .batch-btn.danger {
   background: rgba(255, 77, 79, 0.1);
   color: #ff4d4f;
+}
+
+.batch-btn.warn {
+  background: rgba(250, 173, 20, 0.15);
+  color: #d48806;
 }
 
 .filter-wrapper {
@@ -146,6 +152,7 @@ page {
 .user-name-row {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 12rpx;
   margin-bottom: 8rpx;
 }
@@ -189,20 +196,56 @@ page {
 }
 
 .status-badge {
-  font-size: 22rpx;
-  padding: 6rpx 16rpx;
-  background: rgba(82, 196, 26, 0.1);
+  font-size: 20rpx;
+  padding: 4rpx 12rpx;
+  border: 1rpx solid;
   border-radius: 12rpx;
+  background: rgba(0, 0, 0, 0.03);
 }
 
 .user-actions {
   margin-left: 16rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
 }
 
 .action-btn-small {
   padding: 12rpx 24rpx;
   background: rgba(102, 126, 234, 0.1);
   border-radius: 20rpx;
+}
+
+.action-btn-small.freeze {
+  background: rgba(255, 77, 79, 0.1);
+}
+
+.action-btn-small.freeze text {
+  color: #ff4d4f;
+}
+
+.action-btn-small.unfreeze {
+  background: rgba(82, 196, 26, 0.12);
+}
+
+.action-btn-small.unfreeze text {
+  color: #52c41a;
+}
+
+.action-btn-small.cancel {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.action-btn-small.cancel text {
+  color: #666;
+}
+
+.action-btn-small.restore {
+  background: rgba(24, 144, 255, 0.12);
+}
+
+.action-btn-small.restore text {
+  color: #1890ff;
 }
 
 .action-btn-small text {

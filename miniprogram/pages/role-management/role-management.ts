@@ -1,4 +1,15 @@
-import { getRolePermissionConfigs, ModuleConfigs, RoleConfig, UserRole, PermissionAction, saveRoleToConfig, removeRoleFromConfig, saveRolePermissionsToConfig, removeRolePermissionsFromConfig } from '../../utils/user'
+import {
+  getRolePermissionConfigs,
+  ModuleConfigs,
+  UserRole,
+  PermissionAction,
+  saveRoleToConfig,
+  removeRoleFromConfig,
+  saveRolePermissionsToConfig,
+  removeRolePermissionsFromConfig,
+  pullAdminSystemConfigAndApply,
+  getRoleConfig
+} from '../../utils/user'
 
 Page({
   data: {
@@ -19,17 +30,28 @@ Page({
     allPermissions: ['dashboard', 'user_management', 'role_management', 'system_settings', 'profile', 'orders', 'points', 'settings', 'browse', 'search', 'all']
   },
 
-  onLoad() {
+  async onLoad() {
+    try {
+      await pullAdminSystemConfigAndApply()
+    } catch {
+      // 离线时沿用本地配置
+    }
     this.loadRoles()
     this.loadPermissions()
   },
 
-  onShow() {
+  async onShow() {
+    try {
+      await pullAdminSystemConfigAndApply()
+    } catch {
+      // 静默
+    }
+    this.loadRoles()
     this.loadPermissions()
   },
 
   loadRoles() {
-    const roles = Object.entries(RoleConfig).map(([key, value]) => ({
+    const roles = Object.entries(getRoleConfig()).map(([key, value]) => ({
       role: key,
       name: value.name
     }))
@@ -119,7 +141,7 @@ Page({
 
   editRole(e: any) {
     const role = e.currentTarget.dataset.role
-    const roleConfig = RoleConfig[role as UserRole]
+    const roleConfig = getRoleConfig()[role as UserRole]
     
     this.setData({
       showAddRoleModal: true,
@@ -191,7 +213,7 @@ Page({
     
     wx.showModal({
       title: '确认删除',
-      content: `确定要删除角色 "${RoleConfig[role as UserRole]?.name}" 吗？`,
+      content: `确定要删除角色 "${getRoleConfig()[role as UserRole]?.name}" 吗？`,
       success: (res) => {
         if (res.confirm) {
           this.performDeleteRole(role)
@@ -231,7 +253,7 @@ Page({
     removeRolePermissionsFromConfig(role)
     
     if (this.data.activeRole === role) {
-      const remainingRoles = Object.keys(RoleConfig)
+      const remainingRoles = Object.keys(getRoleConfig())
       if (remainingRoles.length > 0) {
         this.setData({ activeRole: remainingRoles[0] })
       }

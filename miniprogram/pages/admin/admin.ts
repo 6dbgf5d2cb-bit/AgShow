@@ -1,7 +1,5 @@
 import {
   getAllUsers,
-  pullRemoteUsersAndMerge,
-  isUserApiEnabled,
   getCurrentUser,
   addPoints,
   clearAllUsers,
@@ -28,14 +26,7 @@ Page({
   },
 
   async loadStats() {
-    let users = getAllUsers()
-    if (isUserApiEnabled()) {
-      try {
-        users = await pullRemoteUsersAndMerge()
-      } catch {
-        // 统计页静默失败，用户管理页会提示
-      }
-    }
+    const users = getAllUsers()
     const userCount = users.length
     const adminCount = users.filter((u) => (u.roles || []).includes('admin')).length
     const memberCount = users.filter(u => u.memberLevel !== 'normal').length

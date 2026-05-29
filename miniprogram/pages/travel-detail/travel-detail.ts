@@ -131,7 +131,9 @@ Page({
       confirmColor: '#ff4d4f',
       success: async (res) => {
         if (res.confirm) {
-          const success = await deleteRoute(this.data.routeId)
+          const success = await deleteRoute(this.data.routeId, {
+            fromAdmin: !!this.data.isAdmin
+          })
           if (success) {
             wx.showToast({
               title: '删除成功',

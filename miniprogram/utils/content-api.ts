@@ -34,6 +34,59 @@ export function contentRevision(item: { updateTime?: number; publishTime?: numbe
   return item.updateTime || item.publishTime || 0
 }
 
+export function contentAdminRev(item: { adminManagedAt?: number }): number {
+  return item.adminManagedAt || 0
+}
+
+export function contentEffectiveRevision(item: {
+  updateTime?: number
+  publishTime?: number
+  adminManagedAt?: number
+}): number {
+  return Math.max(contentRevision(item), contentAdminRev(item))
+}
+
+/** 合并单条内容（与管理端 upsert 规则一致） */
+export function mergeContentItem<
+  T extends {
+    status?: string
+    allowComments?: boolean
+    adminManagedAt?: number
+    updateTime?: number
+    publishTime?: number
+  }
+>(existing: T, incoming: T): T {
+  const eAdmin = contentAdminRev(existing)
+  const iAdmin = contentAdminRev(incoming)
+  const now = Date.now()
+
+  if (eAdmin > iAdmin) {
+    return {
+      ...incoming,
+      status: existing.status,
+      allowComments: existing.allowComments,
+      adminManagedAt: eAdmin,
+      updateTime: now
+    }
+  }
+
+  if (eAdmin && !iAdmin) {
+    return {
+      ...incoming,
+      status: existing.status,
+      allowComments: existing.allowComments,
+      adminManagedAt: eAdmin,
+      updateTime: now
+    }
+  }
+
+  if (contentEffectiveRevision(incoming) >= contentEffectiveRevision(existing)) {
+    return { ...existing, ...incoming, updateTime: now }
+  }
+
+  return { ...existing, updateTime: now }
+}
+
 export interface ShareLogToMpResult {
   draftMediaId?: string
   message: string

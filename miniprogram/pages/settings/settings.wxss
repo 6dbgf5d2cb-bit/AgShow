@@ -100,6 +100,55 @@
   color: #ccc;
 }
 
+.password-section {
+  padding: 24rpx 30rpx 30rpx;
+}
+
+.input-item {
+  position: relative;
+  margin-bottom: 20rpx;
+}
+
+.label {
+  display: block;
+  font-size: 26rpx;
+  color: #666;
+  margin-bottom: 10rpx;
+}
+
+.input-field {
+  width: 100%;
+  height: 82rpx;
+  border: 1rpx solid #e5e7eb;
+  border-radius: 12rpx;
+  padding: 0 84rpx 0 22rpx;
+  font-size: 28rpx;
+  box-sizing: border-box;
+  background: #fff;
+}
+
+.toggle-eye {
+  position: absolute;
+  right: 24rpx;
+  bottom: 20rpx;
+  font-size: 30rpx;
+}
+
+.password-btn {
+  margin-top: 8rpx;
+  height: 84rpx;
+  line-height: 84rpx;
+  border-radius: 12rpx;
+  border: none;
+  color: #fff;
+  font-size: 30rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.password-btn::after {
+  border: none;
+}
+
 .layout-hint {
   padding: 20rpx 30rpx;
   font-size: 24rpx;

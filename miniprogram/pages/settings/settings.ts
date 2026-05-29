@@ -1,4 +1,4 @@
-import { getCurrentSession, getUserById, updateUser, checkModulePermission, User, MemberLevel } from '../../utils/user'
+import { getCurrentSession, getUserById, updatePassword, checkModulePermission, User } from '../../utils/user'
 
 interface ModuleItem {
   id: string
@@ -17,7 +17,14 @@ Page({
     showEditModal: false,
     editingModuleId: '',
     editingPosition: 0,
-    totalModules: 0
+    totalModules: 0,
+    oldPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+    showOldPassword: false,
+    showNewPassword: false,
+    showConfirmPassword: false,
+    passwordLoading: false
   },
 
   onLoad() {
@@ -143,6 +150,77 @@ Page({
     wx.navigateTo({
       url: '/pages/profile-edit/profile-edit'
     })
+  },
+
+  onOldPasswordInput(e: WechatMiniprogram.Input) {
+    this.setData({ oldPassword: e.detail.value })
+  },
+
+  onNewPasswordInput(e: WechatMiniprogram.Input) {
+    this.setData({ newPassword: e.detail.value })
+  },
+
+  onConfirmPasswordInput(e: WechatMiniprogram.Input) {
+    this.setData({ confirmPassword: e.detail.value })
+  },
+
+  toggleOldPasswordVisible() {
+    this.setData({ showOldPassword: !this.data.showOldPassword })
+  },
+
+  toggleNewPasswordVisible() {
+    this.setData({ showNewPassword: !this.data.showNewPassword })
+  },
+
+  toggleConfirmPasswordVisible() {
+    this.setData({ showConfirmPassword: !this.data.showConfirmPassword })
+  },
+
+  async submitPasswordChange() {
+    if (this.data.passwordLoading) return
+    const session = getCurrentSession()
+    if (!session?.userId) {
+      wx.showToast({ title: '请先登录', icon: 'none' })
+      return
+    }
+
+    const oldPassword = this.data.oldPassword.trim()
+    const newPassword = this.data.newPassword.trim()
+    const confirmPassword = this.data.confirmPassword.trim()
+
+    if (!oldPassword) {
+      wx.showToast({ title: '请输入当前密码', icon: 'none' })
+      return
+    }
+    if (newPassword.length < 6) {
+      wx.showToast({ title: '新密码不少于6位', icon: 'none' })
+      return
+    }
+    if (newPassword === oldPassword) {
+      wx.showToast({ title: '新密码不能与旧密码相同', icon: 'none' })
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      wx.showToast({ title: '两次输入的新密码不一致', icon: 'none' })
+      return
+    }
+
+    this.setData({ passwordLoading: true })
+    try {
+      const ok = await updatePassword(session.userId, oldPassword, newPassword)
+      if (!ok) {
+        wx.showToast({ title: '当前密码错误', icon: 'none' })
+        return
+      }
+      this.setData({
+        oldPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      })
+      wx.showToast({ title: '密码修改成功', icon: 'success' })
+    } finally {
+      this.setData({ passwordLoading: false })
+    }
   },
 
   goBack() {

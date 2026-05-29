@@ -5,6 +5,12 @@ import {
   pushUserToRemote,
   deleteRemoteUsers
 } from './user-api'
+import {
+  fetchAdminSystemConfig,
+  pushAdminSystemConfig,
+  isAdminConfigApiEnabled,
+  type AdminSystemConfigPayload
+} from './admin-config-api'
 
 export type MemberLevel = 'normal' | 'gold' | 'vip' | 'premium'
 
@@ -46,6 +52,64 @@ export interface User {
   googleSub?: string
   roles: UserRole[]
   updatedAt?: number
+  /** 管理后台锁定时间戳，防止用户端同步覆盖角色/等级等 */
+  adminManagedAt?: number
+}
+
+const USER_ADMIN_PROTECTED_FIELDS: (keyof User)[] = ['roles', 'memberLevel', 'status', 'points']
+
+function userEffectiveRevision(user: Partial<User>): number {
+  return Math.max(user.updatedAt || user.registerTime || 0, user.adminManagedAt || 0)
+}
+
+function adminRev(user: Partial<User>): number {
+  return user.adminManagedAt || 0
+}
+
+function applyAdminProtectedUserFields(target: User, adminSource: User): User {
+  const next = { ...target, adminManagedAt: adminSource.adminManagedAt || target.adminManagedAt }
+  USER_ADMIN_PROTECTED_FIELDS.forEach((field) => {
+    if (adminSource[field] !== undefined) {
+      ;(next as User)[field] = adminSource[field] as never
+    }
+  })
+  return next
+}
+
+/** 本地注册表合并（与云端 admin-merge 规则一致） */
+function mergeUserRecordInStorage(existing: User, incoming: User): User {
+  const localAdmin = adminRev(existing)
+  const incomingAdmin = adminRev(incoming)
+
+  if (localAdmin > incomingAdmin) {
+    return normalizeStoredUser(applyAdminProtectedUserFields({ ...existing, ...incoming }, existing))
+  }
+
+  if (localAdmin && !incomingAdmin) {
+    const merged = applyAdminProtectedUserFields({ ...existing, ...incoming }, existing)
+    if (existing.passwordHash) {
+      merged.passwordHash = existing.passwordHash
+      merged.passwordSalt = existing.passwordSalt
+    }
+    return normalizeStoredUser(merged)
+  }
+
+  if (userEffectiveRevision(incoming) >= userEffectiveRevision(existing)) {
+    const merged = { ...existing, ...incoming }
+    const remoteCorrupted =
+      isAdminUser(merged) &&
+      incoming.passwordSalt &&
+      hashPassword('changeme', incoming.passwordSalt) === incoming.passwordHash
+    if (!incoming.passwordHash || remoteCorrupted) {
+      if (existing.passwordHash) {
+        merged.passwordHash = existing.passwordHash
+        merged.passwordSalt = existing.passwordSalt
+      }
+    }
+    return normalizeStoredUser(merged)
+  }
+
+  return normalizeStoredUser({ ...existing, updatedAt: existing.updatedAt || existing.registerTime })
 }
 
 export interface LoginRequest {
@@ -449,7 +513,7 @@ function upsertUserInStorage(user: User): User {
     saved = normalized
     users.push(saved)
   } else {
-    saved = normalizeStoredUser({ ...users[index], ...normalized })
+    saved = mergeUserRecordInStorage(users[index], normalized)
     users[index] = saved
   }
 
@@ -698,14 +762,20 @@ function saveRoleConfig(config: Record<string, { name: string; permissions: stri
 
 export const RoleConfig: Record<string, { name: string; permissions: string[] }> = getStoredRoleConfig()
 
+export function getRoleConfig(): Record<string, { name: string; permissions: string[] }> {
+  return getStoredRoleConfig()
+}
+
 export function saveRoleToConfig(roleKey: string, config: { name: string; permissions: string[] }): void {
   RoleConfig[roleKey] = config
   saveRoleConfig(RoleConfig)
+  void persistAdminSystemConfigToCloud()
 }
 
 export function removeRoleFromConfig(roleKey: string): void {
   delete RoleConfig[roleKey]
   saveRoleConfig(RoleConfig)
+  void persistAdminSystemConfigToCloud()
 }
 
 export function hasPermission(role: UserRole, permission: string): boolean {
@@ -1040,7 +1110,7 @@ export async function login(request: LoginRequest): Promise<UserSession> {
   await restoreUserFromRemote({ username: nameKey })
 
   const users = getMockUsers()
-  const user = users.find((u) => (u.username || '').toLowerCase() === nameKey)
+  let user = users.find((u) => (u.username || '').toLowerCase() === nameKey)
 
   if (!user) {
     throw new Error('用户名不存在')
@@ -1071,7 +1141,7 @@ export async function login(request: LoginRequest): Promise<UserSession> {
     
     const remainingAttempts = Math.max(0, 5 - user.loginFailCount)
     const adminHint = isAdminUser(user)
-      ? `默认密码为 ${DEFAULT_ADMIN_PASSWORD}，可在登录页「忘记密码」重置。`
+      ? '如忘记密码，可在登录页使用「忘记密码」重置。'
       : ''
     if (remainingAttempts > 0) {
       throw new Error(`密码错误，还有${remainingAttempts}次尝试机会。${adminHint}`)
@@ -1228,13 +1298,38 @@ export async function updateUser(userId: string, updates: Partial<User>): Promis
   return saved
 }
 
+/** 管理后台更新用户（锁定角色/等级/积分等，防止被用户端同步覆盖） */
+export async function adminUpdateUser(userId: string, updates: Partial<User>): Promise<User | null> {
+  const user = getUserById(userId)
+  if (!user) return null
+
+  const now = Date.now()
+  const saved = upsertUserInStorage({
+    ...user,
+    ...updates,
+    adminManagedAt: now,
+    updatedAt: now
+  })
+  try {
+    await pushUserAndWait(saved)
+  } catch (e) {
+    console.warn('[user] adminUpdateUser remote sync failed', e)
+  }
+
+  if (getCurrentSession()?.userId === userId) {
+    refreshSessionFromRegistry(userId)
+  }
+
+  return saved
+}
+
 /** 直接设置用户角色列表 */
 export async function setUserRoles(userId: string, roles: UserRole[]): Promise<User | null> {
   const safeRoles = roles.length > 0 ? roles : ['member']
-  return updateUser(userId, { roles: safeRoles })
+  return adminUpdateUser(userId, { roles: safeRoles })
 }
 
-export function updatePassword(userId: string, oldPassword: string, newPassword: string): boolean {
+export async function updatePassword(userId: string, oldPassword: string, newPassword: string): Promise<boolean> {
   const users = getMockUsers()
   const user = users.find(u => u.userId === userId)
   
@@ -1249,66 +1344,55 @@ export function updatePassword(userId: string, oldPassword: string, newPassword:
   user.passwordSalt = newSalt
   user.passwordHash = newHash
   user.lastPasswordChangeTime = Date.now()
+  user.updatedAt = Date.now()
   
   saveMockUsers(users)
+  try {
+    await pushUserAndWait(normalizeStoredUser(user))
+  } catch (e) {
+    console.warn('[user] updatePassword remote sync failed', e)
+  }
   return true
 }
 
 export function upgradeMemberLevel(userId: string, newLevel: MemberLevel): boolean {
-  const users = getMockUsers()
-  const user = users.find(u => u.userId === userId)
-  
+  const user = getUserById(userId)
   if (!user) return false
-  
-  user.memberLevel = newLevel
-  saveMockUsers(users)
-  
-  void updateUser(userId, { memberLevel: newLevel })
+
+  void adminUpdateUser(userId, { memberLevel: newLevel })
   return true
 }
 
 export function addPoints(userId: string, points: number): number {
-  const users = getMockUsers()
-  const user = users.find(u => u.userId === userId)
-  
+  const user = getUserById(userId)
   if (!user) return 0
-  
-  user.points = Math.max(0, user.points + points)
-  saveMockUsers(users)
-  
-  void updateUser(userId, { points: user.points })
-  return user.points
+
+  const nextPoints = Math.max(0, user.points + points)
+  void adminUpdateUser(userId, { points: nextPoints })
+  return nextPoints
 }
 
 export function assignRole(userId: string, role: UserRole): boolean {
-  const users = getMockUsers()
-  const user = users.find(u => u.userId === userId)
-  
+  const user = getUserById(userId)
   if (!user) return false
-  
+
   if (!user.roles.includes(role)) {
-    user.roles.push(role)
-    saveMockUsers(users)
-    void updateUser(userId, { roles: user.roles })
+    void adminUpdateUser(userId, { roles: [...user.roles, role] })
   }
-  
+
   return true
 }
 
 export function removeRole(userId: string, role: UserRole): boolean {
-  const users = getMockUsers()
-  const user = users.find(u => u.userId === userId)
-  
+  const user = getUserById(userId)
   if (!user) return false
-  
+
   const index = user.roles.indexOf(role)
   if (index !== -1 && user.roles.length > 1) {
-    user.roles.splice(index, 1)
-    saveMockUsers(users)
-    void updateUser(userId, { roles: user.roles })
+    void adminUpdateUser(userId, { roles: user.roles.filter((r) => r !== role) })
     return true
   }
-  
+
   return false
 }
 
@@ -1377,8 +1461,25 @@ export function mergeUsersIntoLocalRegistry(remoteUsers: User[]): User[] {
     }
 
     const local = users[index]
-    // 仅当云端版本更新时才覆盖本地，避免刚做的管理操作被旧数据冲掉
-    if (userRevision(normalized) > userRevision(local)) {
+    const localAdmin = adminRev(local)
+    const remoteAdmin = adminRev(normalized)
+
+    if (localAdmin > remoteAdmin) {
+      saveUserRecord(normalizeStoredUser(applyAdminProtectedUserFields({ ...local, ...normalized }, local)))
+      continue
+    }
+
+    if (localAdmin && !remoteAdmin) {
+      const merged = applyAdminProtectedUserFields({ ...local, ...normalized }, local)
+      if (local.passwordHash) {
+        merged.passwordHash = local.passwordHash
+        merged.passwordSalt = local.passwordSalt
+      }
+      saveUserRecord(normalizeStoredUser(merged))
+      continue
+    }
+
+    if (userEffectiveRevision(normalized) > userEffectiveRevision(local)) {
       const merged = { ...local, ...normalized }
       const remoteCorrupted =
         isAdminUser(merged) &&
@@ -1478,7 +1579,7 @@ export async function batchUpdateRole(
 
     if (!nextRoles) continue
 
-    const saved = await updateUser(userId, { roles: nextRoles })
+    const saved = await adminUpdateUser(userId, { roles: nextRoles })
     if (saved) count++
   }
 
@@ -1492,32 +1593,120 @@ export async function batchUpdateMemberLevel(
   let count = 0
 
   for (const userId of userIds) {
-    const saved = await updateUser(userId, { memberLevel: level })
+    const saved = await adminUpdateUser(userId, { memberLevel: level })
     if (saved) count++
   }
 
   return count
 }
 
-export function batchAddUsers(newUsers: Omit<User, 'userId' | 'passwordSalt' | 'passwordHash' | 'registerTime' | 'lastPasswordChangeTime'>[]): User[] {
+/** 管理后台：设置单个用户账户状态 */
+export async function setUserStatus(userId: string, status: AccountStatus): Promise<User | null> {
+  const updates: Partial<User> = { status }
+  if (status === 'normal') {
+    updates.loginFailCount = 0
+    updates.lockTime = 0
+  }
+  return adminUpdateUser(userId, updates)
+}
+
+/** 管理后台：批量修改账户状态（冻结/解冻/注销等） */
+export async function batchUpdateUserStatus(
+  userIds: string[],
+  status: AccountStatus
+): Promise<number> {
+  let count = 0
+  for (const userId of userIds) {
+    const user = getUserById(userId)
+    if (!user || user.status === status) continue
+    if (isAdminUser(user) && status !== 'normal') continue
+    const saved = await setUserStatus(userId, status)
+    if (saved) count++
+  }
+  return count
+}
+
+/** 管理后台：批量冻结账户（跳过已冻结/已注销） */
+export async function freezeUsers(userIds: string[]): Promise<number> {
+  let count = 0
+  for (const userId of userIds) {
+    const user = getUserById(userId)
+    if (!user || user.status === 'frozen' || user.status === 'cancelled') continue
+    if (isAdminUser(user)) continue
+    const saved = await setUserStatus(userId, 'frozen')
+    if (saved) count++
+  }
+  return count
+}
+
+/** 管理后台：批量解冻账户（仅已冻结） */
+export async function unfreezeUsers(userIds: string[]): Promise<number> {
+  let count = 0
+  for (const userId of userIds) {
+    const user = getUserById(userId)
+    if (!user || user.status !== 'frozen') continue
+    if (isAdminUser(user)) continue
+    const saved = await setUserStatus(userId, 'normal')
+    if (saved) count++
+  }
+  return count
+}
+
+/** 管理后台：批量注销账户（跳过已注销） */
+export async function cancelUsers(userIds: string[]): Promise<number> {
+  let count = 0
+  for (const userId of userIds) {
+    const user = getUserById(userId)
+    if (!user || user.status === 'cancelled') continue
+    if (isAdminUser(user)) continue
+    const saved = await setUserStatus(userId, 'cancelled')
+    if (saved) count++
+  }
+  return count
+}
+
+/** 管理后台：批量恢复账户（仅已注销 → 正常） */
+export async function restoreUsers(userIds: string[]): Promise<number> {
+  let count = 0
+  for (const userId of userIds) {
+    const user = getUserById(userId)
+    if (!user || user.status !== 'cancelled') continue
+    if (isAdminUser(user)) continue
+    const saved = await setUserStatus(userId, 'normal')
+    if (saved) count++
+  }
+  return count
+}
+
+export async function batchAddUsers(
+  newUsers: Omit<User, 'userId' | 'passwordSalt' | 'passwordHash' | 'registerTime' | 'lastPasswordChangeTime'>[]
+): Promise<User[]> {
   const createdUsers: User[] = []
-  
-  newUsers.forEach(userData => {
+  const now = Date.now()
+
+  for (const userData of newUsers) {
     const salt = generateSalt()
     const passwordHash = hashPassword('123456', salt)
-    
+
     const newUser: User = {
       ...userData,
       userId: generateUserId(),
       passwordSalt: salt,
-      passwordHash: passwordHash,
-      registerTime: Date.now(),
-      lastPasswordChangeTime: Date.now()
+      passwordHash,
+      registerTime: now,
+      lastPasswordChangeTime: now,
+      adminManagedAt: now,
+      updatedAt: now
     }
-    
+
     const created = upsertUserInStorage(newUser)
+    try {
+      await pushUserAndWait(created)
+    } catch (e) {
+      console.warn('[user] batchAddUsers remote sync failed', e)
+    }
     createdUsers.push(created)
-  })
+  }
 
   return createdUsers
 }
@@ -1587,6 +1776,10 @@ function saveModuleConfigs(configs: ModuleConfig[]): void {
 
 export const ModuleConfigs: ModuleConfig[] = getStoredModuleConfigs()
 
+export function getModuleConfigs(): ModuleConfig[] {
+  return getStoredModuleConfigs()
+}
+
 export function saveModuleConfigsToStorage(configs: ModuleConfig[]): void {
   configs.forEach(config => {
     const index = ModuleConfigs.findIndex(m => m.id === config.id)
@@ -1595,6 +1788,7 @@ export function saveModuleConfigsToStorage(configs: ModuleConfig[]): void {
     }
   })
   saveModuleConfigs(ModuleConfigs)
+  void persistAdminSystemConfigToCloud()
 }
 
 const DefaultRolePermissionConfigs: Record<string, Record<string, Record<PermissionAction, boolean>>> = {
@@ -1701,12 +1895,14 @@ export function saveRolePermissionsToConfig(roleKey: string, permissions: Record
   const currentConfigs = getStoredRolePermissions()
   currentConfigs[roleKey] = permissions
   saveRolePermissions(currentConfigs)
+  void persistAdminSystemConfigToCloud()
 }
 
 export function removeRolePermissionsFromConfig(roleKey: string): void {
   const currentConfigs = getStoredRolePermissions()
   delete currentConfigs[roleKey]
   saveRolePermissions(currentConfigs)
+  void persistAdminSystemConfigToCloud()
 }
 
 const HOME_PAGE_CONFIGS_KEY = 'member_homepage_configs'
@@ -1753,6 +1949,10 @@ function saveHomePageConfigs(configs: HomePageConfig[]): void {
 
 export const HomePageConfigs: HomePageConfig[] = getStoredHomePageConfigs()
 
+export function getHomePageConfigs(): HomePageConfig[] {
+  return getStoredHomePageConfigs()
+}
+
 export function saveHomePageConfigsToStorage(configs: HomePageConfig[]): void {
   configs.forEach(config => {
     const index = HomePageConfigs.findIndex(h => h.moduleId === config.moduleId)
@@ -1761,6 +1961,62 @@ export function saveHomePageConfigsToStorage(configs: HomePageConfig[]): void {
     }
   })
   saveHomePageConfigs(HomePageConfigs)
+  void persistAdminSystemConfigToCloud()
+}
+
+const ADMIN_CONFIG_LOCAL_REV_KEY = 'admin_system_config_local_rev'
+
+function buildAdminSystemConfigPayload(): AdminSystemConfigPayload {
+  const roleConfig = getStoredRoleConfig()
+  const customRoleConfig = { ...roleConfig }
+  delete customRoleConfig.admin
+  delete customRoleConfig.member
+  delete customRoleConfig.guest
+
+  return {
+    roleConfig: customRoleConfig,
+    rolePermissions: getStoredRolePermissions(),
+    moduleConfigs: getStoredModuleConfigs(),
+    homePageConfigs: getStoredHomePageConfigs()
+  }
+}
+
+function applyAdminSystemConfigFromRemote(config: AdminSystemConfigPayload): void {
+  const remoteRev = config.adminManagedAt || config.updatedAt || 0
+  const localRev = (wx.getStorageSync(ADMIN_CONFIG_LOCAL_REV_KEY) as number) || 0
+  if (remoteRev && remoteRev < localRev) return
+
+  if (config.roleConfig && typeof config.roleConfig === 'object') {
+    saveRoleConfig({ ...DefaultRoleConfig, ...config.roleConfig })
+    Object.assign(RoleConfig, getStoredRoleConfig())
+  }
+  if (config.rolePermissions) {
+    saveRolePermissions(config.rolePermissions as Record<string, Record<string, Record<PermissionAction, boolean>>>)
+  }
+  if (Array.isArray(config.moduleConfigs)) {
+    saveModuleConfigs(config.moduleConfigs as ModuleConfig[])
+    ModuleConfigs.splice(0, ModuleConfigs.length, ...getStoredModuleConfigs())
+  }
+  if (Array.isArray(config.homePageConfigs)) {
+    saveHomePageConfigs(config.homePageConfigs as HomePageConfig[])
+    HomePageConfigs.splice(0, HomePageConfigs.length, ...getStoredHomePageConfigs())
+  }
+  if (remoteRev) {
+    wx.setStorageSync(ADMIN_CONFIG_LOCAL_REV_KEY, remoteRev)
+  }
+}
+
+export async function persistAdminSystemConfigToCloud(): Promise<void> {
+  if (!isAdminConfigApiEnabled()) return
+  const saved = await pushAdminSystemConfig(buildAdminSystemConfigPayload())
+  const rev = saved.adminManagedAt || saved.updatedAt || Date.now()
+  wx.setStorageSync(ADMIN_CONFIG_LOCAL_REV_KEY, rev)
+}
+
+export async function pullAdminSystemConfigAndApply(): Promise<void> {
+  if (!isAdminConfigApiEnabled()) return
+  const config = await fetchAdminSystemConfig()
+  applyAdminSystemConfigFromRemote(config)
 }
 
 function checkModuleConfigPermission(moduleId: string, action: PermissionAction): boolean {

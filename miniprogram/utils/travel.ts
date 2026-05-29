@@ -3,7 +3,7 @@ import {
   isContentApiEnabled,
   fetchRemoteRoutes,
   pushRouteToRemote,
-  contentRevision
+  mergeContentItem
 } from './content-api'
 
 export interface RouteParticipant {
@@ -29,6 +29,7 @@ export interface TravelRoute {
   publisherId: string
   publishTime: number
   updateTime: number
+  adminManagedAt?: number
   status: 'active' | 'inactive' | 'deleted'
   viewCount: number
   likeCount: number
@@ -186,9 +187,7 @@ function mergeRoutes(local: TravelRoute[], remote: TravelRoute[]): TravelRoute[]
       map.set(remoteItem.routeId, remoteItem)
       continue
     }
-    if (contentRevision(remoteItem) > contentRevision(existing)) {
-      map.set(remoteItem.routeId, remoteItem)
-    }
+    map.set(remoteItem.routeId, mergeContentItem(existing, remoteItem))
   }
   return Array.from(map.values())
 }
@@ -337,14 +336,21 @@ export async function updateRoute(routeId: string, updates: Partial<TravelRoute>
   return routes[index]
 }
 
-export async function deleteRoute(routeId: string): Promise<boolean> {
+export async function deleteRoute(
+  routeId: string,
+  options?: { fromAdmin?: boolean }
+): Promise<boolean> {
   const routes = getTravelRoutes()
   const index = routes.findIndex(r => r.routeId === routeId)
   
   if (index === -1) return false
   
+  const now = Date.now()
   routes[index].status = 'deleted'
-  routes[index].updateTime = Date.now()
+  routes[index].updateTime = now
+  if (options?.fromAdmin) {
+    routes[index].adminManagedAt = now
+  }
   saveTravelRoutes(routes)
   await pushRouteToCloud(routes[index])
   return true

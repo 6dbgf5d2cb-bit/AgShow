@@ -7,18 +7,27 @@ import {
   batchUpdateRole,
   batchUpdateMemberLevel,
   batchAddUsers,
+  freezeUsers,
+  unfreezeUsers,
+  cancelUsers,
+  restoreUsers,
+  setUserStatus,
   MemberLevelConfig,
   AccountStatusConfig,
   RoleConfig,
   MemberLevel,
   UserRole,
-  User
+  User,
+  type AccountStatus
 } from '../../utils/user'
 
 type UserListItem = User & {
   levelName: string
   levelColor: string
   roleNames: string
+  statusName: string
+  statusColor: string
+  isAdminAccount: boolean
 }
 
 Page({
@@ -31,6 +40,8 @@ Page({
     showRoleModal: false,
     showLevelModal: false,
     showBatchAddModal: false,
+    showStatusModal: false,
+    statusAction: 'freeze' as 'freeze' | 'unfreeze' | 'cancel' | 'restore',
     showSingleUserRoleModal: false,
     selectedRole: '',
     roleAction: 'add' as 'add' | 'remove',
@@ -99,7 +110,10 @@ Page({
       roles: user.roles,
       levelName: MemberLevelConfig[level]?.name || '普通会员',
       levelColor: MemberLevelConfig[level]?.color || '#999999',
-      roleNames: this.formatRoleNames(user.roles)
+      roleNames: this.formatRoleNames(user.roles),
+      statusName: AccountStatusConfig[user.status]?.name || user.status,
+      statusColor: AccountStatusConfig[user.status]?.color || '#999',
+      isAdminAccount: (user.roles || []).includes('admin')
     }
   },
 
@@ -398,6 +412,126 @@ Page({
     this.setData({ selectedLevel: e.currentTarget.dataset.value })
   },
 
+  showFreezeConfirm() {
+    this.setData({ showStatusModal: true, statusAction: 'freeze' })
+  },
+
+  showUnfreezeConfirm() {
+    this.setData({ showStatusModal: true, statusAction: 'unfreeze' })
+  },
+
+  showCancelConfirm() {
+    this.setData({ showStatusModal: true, statusAction: 'cancel' })
+  },
+
+  showRestoreConfirm() {
+    this.setData({ showStatusModal: true, statusAction: 'restore' })
+  },
+
+  closeStatusModal() {
+    this.setData({ showStatusModal: false })
+  },
+
+  async confirmStatusChange() {
+    const { selectedUsers, statusAction } = this.data
+    if (selectedUsers.length === 0) {
+      wx.showToast({ title: '请先选择用户', icon: 'none' })
+      return
+    }
+
+    const actionMap = {
+      freeze: { run: () => freezeUsers(selectedUsers), empty: '没有可冻结的用户', ok: (n: number) => `已冻结 ${n} 个账户` },
+      unfreeze: { run: () => unfreezeUsers(selectedUsers), empty: '没有可解冻的用户', ok: (n: number) => `已解冻 ${n} 个账户` },
+      cancel: { run: () => cancelUsers(selectedUsers), empty: '没有可注销的用户', ok: (n: number) => `已注销 ${n} 个账户` },
+      restore: { run: () => restoreUsers(selectedUsers), empty: '没有可恢复的用户', ok: (n: number) => `已恢复 ${n} 个账户` }
+    } as const
+
+    const action = actionMap[statusAction]
+
+    try {
+      const updatedCount = await action.run()
+
+      if (updatedCount === 0) {
+        wx.showToast({ title: action.empty, icon: 'none' })
+        return
+      }
+
+      wx.showToast({
+        title: action.ok(updatedCount),
+        icon: 'success',
+        duration: 1500
+      })
+      this.setData({ showStatusModal: false, selectedUsers: [] })
+      this.loadUsers(false)
+    } catch (e) {
+      console.error('[user-management] status change failed', e)
+      wx.showToast({ title: '账户状态修改失败', icon: 'none' })
+    }
+  },
+
+  guardAdminUser(user: User, actionLabel: string): boolean {
+    if ((user.roles || []).includes('admin')) {
+      wx.showToast({ title: `不能对管理员账户${actionLabel}`, icon: 'none' })
+      return false
+    }
+    return true
+  },
+
+  confirmUserStatusChange(
+    user: User,
+    nextStatus: AccountStatus,
+    actionLabel: string,
+    hint: string
+  ) {
+    wx.showModal({
+      title: `确认${actionLabel}`,
+      content: `确定要${hint}用户「${user.nickname || user.username}」吗？`,
+      success: async (res) => {
+        if (!res.confirm) return
+        try {
+          const saved = await setUserStatus(user.userId, nextStatus)
+          if (!saved) {
+            wx.showToast({ title: '用户不存在', icon: 'none' })
+            return
+          }
+          wx.showToast({ title: `${actionLabel}成功`, icon: 'success' })
+          this.loadUsers(false)
+        } catch (err) {
+          console.error('[user-management] toggle status failed', err)
+          wx.showToast({ title: `${actionLabel}失败`, icon: 'none' })
+        }
+      }
+    })
+  },
+
+  toggleUserFreeze(e: WechatMiniprogram.TouchEvent) {
+    const userId = e.currentTarget.dataset.id as string
+    const user = this.data.users.find((u) => u.userId === userId)
+    if (!user || !this.guardAdminUser(user, '冻结')) return
+    if (user.status === 'cancelled') {
+      wx.showToast({ title: '已注销账户请先恢复', icon: 'none' })
+      return
+    }
+
+    const nextStatus: AccountStatus = user.status === 'frozen' ? 'normal' : 'frozen'
+    const actionLabel = nextStatus === 'frozen' ? '冻结' : '解冻'
+    const hint = nextStatus === 'frozen' ? '冻结' : '解冻'
+    this.confirmUserStatusChange(user, nextStatus, actionLabel, hint)
+  },
+
+  toggleUserCancelRestore(e: WechatMiniprogram.TouchEvent) {
+    const userId = e.currentTarget.dataset.id as string
+    const user = this.data.users.find((u) => u.userId === userId)
+    if (!user || !this.guardAdminUser(user, '操作')) return
+
+    if (user.status === 'cancelled') {
+      this.confirmUserStatusChange(user, 'normal', '恢复', '恢复')
+      return
+    }
+
+    this.confirmUserStatusChange(user, 'cancelled', '注销', '注销')
+  },
+
   async confirmLevelChange() {
     const { selectedUsers, selectedLevel } = this.data
 
@@ -448,7 +582,7 @@ Page({
     this.setData({ batchPhones: e.detail.value })
   },
 
-  confirmBatchAdd() {
+  async confirmBatchAdd() {
     const { batchUsernames, batchPhones } = this.data
     
     if (!batchUsernames.trim()) {
@@ -483,7 +617,14 @@ Page({
       roles: ['member'] as UserRole[]
     }))
 
-    const createdUsers = batchAddUsers(newUsers)
+    let createdUsers: User[] = []
+    try {
+      createdUsers = await batchAddUsers(newUsers)
+    } catch (e) {
+      console.error('[user-management] batch add failed', e)
+      wx.showToast({ title: '添加失败，请检查云托管', icon: 'none' })
+      return
+    }
     
     wx.showToast({
       title: `添加成功，共添加 ${createdUsers.length} 个用户`,
@@ -497,7 +638,7 @@ Page({
       batchPhones: ''
     })
     
-    this.loadUsers()
+    this.loadUsers(false)
   },
 
   goBack() {

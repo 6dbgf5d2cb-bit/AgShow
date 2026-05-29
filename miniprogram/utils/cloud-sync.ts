@@ -4,7 +4,7 @@
 import { isContentApiEnabled } from './content-api'
 import { pullRemoteLogsAndMerge } from './travellog'
 import { pullRemoteRoutesAndMerge } from './travel'
-import { isUserApiEnabled, pullRemoteUsersAndMerge } from './user'
+import { isUserApiEnabled, pullRemoteUsersAndMerge, pullAdminSystemConfigAndApply } from './user'
 
 export function isCloudBackendEnabled(): boolean {
   return isUserApiEnabled() || isContentApiEnabled()
@@ -20,6 +20,12 @@ export async function syncAllFromCloud(): Promise<void> {
     } catch (e) {
       errors.push('用户')
       console.warn('[cloud-sync] pull users failed', e)
+    }
+    try {
+      await pullAdminSystemConfigAndApply()
+    } catch (e) {
+      errors.push('系统配置')
+      console.warn('[cloud-sync] pull admin config failed', e)
     }
   }
 

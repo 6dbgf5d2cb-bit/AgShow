@@ -19,6 +19,53 @@
 
   <view class="section">
     <view class="section-header">
+      <text class="section-title">账号安全</text>
+    </view>
+    <view class="section-content password-section">
+      <view class="input-item">
+        <text class="label">当前密码</text>
+        <input
+          class="input-field"
+          password="{{!showOldPassword}}"
+          value="{{oldPassword}}"
+          placeholder="请输入当前密码"
+          bindinput="onOldPasswordInput"
+        />
+        <text class="toggle-eye" bindtap="toggleOldPasswordVisible">{{showOldPassword ? '🙈' : '👁️'}}</text>
+      </view>
+
+      <view class="input-item">
+        <text class="label">新密码</text>
+        <input
+          class="input-field"
+          password="{{!showNewPassword}}"
+          value="{{newPassword}}"
+          placeholder="请输入新密码（不少于6位）"
+          bindinput="onNewPasswordInput"
+        />
+        <text class="toggle-eye" bindtap="toggleNewPasswordVisible">{{showNewPassword ? '🙈' : '👁️'}}</text>
+      </view>
+
+      <view class="input-item">
+        <text class="label">确认新密码</text>
+        <input
+          class="input-field"
+          password="{{!showConfirmPassword}}"
+          value="{{confirmPassword}}"
+          placeholder="请再次输入新密码"
+          bindinput="onConfirmPasswordInput"
+        />
+        <text class="toggle-eye" bindtap="toggleConfirmPasswordVisible">{{showConfirmPassword ? '🙈' : '👁️'}}</text>
+      </view>
+
+      <button class="password-btn" loading="{{passwordLoading}}" bindtap="submitPasswordChange">
+        修改密码
+      </button>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="section-header">
       <text class="section-title">页面布局</text>
       <view class="refresh-btn" bindtap="refreshLayout">
         <text>刷新</text>

@@ -87,10 +87,6 @@
           </view>
         </view>
 
-        <view class="admin-login-hint">
-          <text>管理员默认：{{defaultAdminUsername}} / {{defaultAdminPassword}}</text>
-        </view>
-
         <view class="form-options">
           <view class="checkbox-item" bindtap="onRememberMeChange">
             <view class="checkbox {{rememberMe ? 'checked' : ''}}">

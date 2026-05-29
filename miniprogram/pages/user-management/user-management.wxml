@@ -29,6 +29,18 @@
       <view class="batch-btn" bindtap="showLevelModal">
         <text>批量改等级</text>
       </view>
+      <view class="batch-btn warn" bindtap="showFreezeConfirm">
+        <text>批量冻结</text>
+      </view>
+      <view class="batch-btn" bindtap="showUnfreezeConfirm">
+        <text>批量解冻</text>
+      </view>
+      <view class="batch-btn danger" bindtap="showCancelConfirm">
+        <text>批量注销</text>
+      </view>
+      <view class="batch-btn" bindtap="showRestoreConfirm">
+        <text>批量恢复</text>
+      </view>
     </view>
     <view wx:else class="filter-wrapper">
       <view class="filter-item {{filterLevel === '' ? 'active' : ''}}" bindtap="setFilterLevel" data-level="">
@@ -57,6 +69,9 @@
           <view class="level-badge" style="background:{{item.levelColor}}">
             <text>{{item.levelName}}</text>
           </view>
+          <view class="status-badge" style="color:{{item.statusColor}}; border-color:{{item.statusColor}}">
+            <text>{{item.statusName}}</text>
+          </view>
         </view>
         <text class="username">@{{item.username}}</text>
         <view class="user-meta">
@@ -66,6 +81,23 @@
         </view>
       </view>
       <view class="user-actions">
+        <block wx:if="{{!item.isAdminAccount}}">
+          <view
+            wx:if="{{item.status !== 'cancelled'}}"
+            class="action-btn-small {{item.status === 'frozen' ? 'unfreeze' : 'freeze'}}"
+            bindtap="toggleUserFreeze"
+            data-id="{{item.userId}}"
+          >
+            <text>{{item.status === 'frozen' ? '解冻' : '冻结'}}</text>
+          </view>
+          <view
+            class="action-btn-small {{item.status === 'cancelled' ? 'restore' : 'cancel'}}"
+            bindtap="toggleUserCancelRestore"
+            data-id="{{item.userId}}"
+          >
+            <text>{{item.status === 'cancelled' ? '恢复' : '注销'}}</text>
+          </view>
+        </block>
         <view class="action-btn-small" bindtap="showSingleUserRoleModal" data-id="{{item.userId}}" data-name="{{item.nickname}}">
           <text>授权</text>
         </view>
@@ -175,6 +207,39 @@
       <view class="modal-footer">
         <button class="btn-secondary" bindtap="closeSingleUserRoleModal">取消</button>
         <button class="btn-primary" bindtap="confirmSingleUserRoleChange">确认授权</button>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{showStatusModal}}" class="modal-overlay" bindtap="closeStatusModal">
+    <view class="modal-content" catchtap="noop">
+      <view class="modal-header">
+        <text wx:if="{{statusAction === 'freeze'}}">批量冻结账户</text>
+        <text wx:elif="{{statusAction === 'unfreeze'}}">批量解冻账户</text>
+        <text wx:elif="{{statusAction === 'cancel'}}">批量注销账户</text>
+        <text wx:else>批量恢复账户</text>
+        <view class="modal-close" bindtap="closeStatusModal">×</view>
+      </view>
+      <view class="modal-body">
+        <text wx:if="{{statusAction === 'freeze'}}">
+          确定要冻结选中的 {{selectedUsers.length}} 个用户吗？冻结后对方将无法登录。
+        </text>
+        <text wx:elif="{{statusAction === 'unfreeze'}}">
+          确定要解冻选中的 {{selectedUsers.length}} 个用户吗？解冻后可正常登录。
+        </text>
+        <text wx:elif="{{statusAction === 'cancel'}}">
+          确定要注销选中的 {{selectedUsers.length}} 个用户吗？注销后对方将无法登录，数据仍保留可恢复。
+        </text>
+        <text wx:else>
+          确定要恢复选中的 {{selectedUsers.length}} 个用户吗？恢复后账户状态变为正常，可重新登录。
+        </text>
+      </view>
+      <view class="modal-footer">
+        <button class="btn-secondary" bindtap="closeStatusModal">取消</button>
+        <button wx:if="{{statusAction === 'freeze'}}" class="btn-danger" bindtap="confirmStatusChange">确认冻结</button>
+        <button wx:elif="{{statusAction === 'unfreeze'}}" class="btn-primary" bindtap="confirmStatusChange">确认解冻</button>
+        <button wx:elif="{{statusAction === 'cancel'}}" class="btn-danger" bindtap="confirmStatusChange">确认注销</button>
+        <button wx:else class="btn-primary" bindtap="confirmStatusChange">确认恢复</button>
       </view>
     </view>
   </view>

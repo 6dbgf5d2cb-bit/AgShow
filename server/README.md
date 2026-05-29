@@ -119,6 +119,8 @@ baseUrl: 'http://127.0.0.1:3000'  // 开发者工具勾选「不校验合法域�
 | GET | `/api/users/lookup?openId=&phone=&username=` | 按条件查询单个用户（重装恢复） |
 | POST | `/api/users/upsert` | 注册/登录同步用户 |
 | POST | `/api/users/delete` | 删除用户 |
+| GET | `/api/admin/system-config` | 管理后台系统配置（角色/模块/首页权限） |
+| POST | `/api/admin/system-config` | 保存管理后台系统配置 |
 | GET | `/api/travel/routes` | 自驾游线路列表 |
 | POST | `/api/travel/routes/upsert` | 发布/更新线路 |
 | GET | `/api/travel/logs` | 旅行记列表 |
@@ -131,7 +133,15 @@ baseUrl: 'http://127.0.0.1:3000'  // 开发者工具勾选「不校验合法域�
 | 用户注册/登录 | `data/users.json` |
 | 旅行记 | `data/travel_logs.json` |
 | 自驾游线路 | `data/travel_routes.json` |
+| 管理后台系统配置 | `data/system_config.json` |
 | 找回密码验证码 | `data/reset_codes.json` |
+
+### 管理后台变更永久化
+
+- 管理员修改的**用户角色、会员等级、积分、账户状态（含冻结/解冻）**会写入 `adminManagedAt`；普通用户端同步（`POST /api/users/upsert`）**不会覆盖**这些字段。
+- 用户管理页支持**批量冻结/解冻、批量注销/恢复**及单用户操作；变更后无法被用户端同步改回。注销账户无法登录，恢复后变为正常可登录。
+- 管理员删除/审核的**旅行记、自驾游**（`status`、`allowComments`）同样受 `adminManagedAt` 保护。
+- 角色权限、模块开关、首页配置保存在 `system_config.json`，多设备/重装后通过 `GET /api/admin/system-config` 恢复。
 
 ### 忘记密码（短信 / 邮箱）
 

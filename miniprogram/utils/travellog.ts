@@ -3,7 +3,7 @@ import {
   isContentApiEnabled,
   fetchRemoteLogs,
   pushLogToRemote,
-  contentRevision
+  mergeContentItem
 } from './content-api'
 
 const TRAVELLOG_KEY = 'travel_logs'
@@ -26,6 +26,7 @@ export interface TravelLog {
   publisherId: string
   publishTime: number
   updateTime: number
+  adminManagedAt?: number
   status: 'active' | 'deleted'
   viewCount: number
   likeCount: number
@@ -218,9 +219,7 @@ function mergeLogs(local: TravelLog[], remote: TravelLog[]): TravelLog[] {
       map.set(remoteItem.logId, remoteItem)
       continue
     }
-    if (contentRevision(remoteItem) > contentRevision(existing)) {
-      map.set(remoteItem.logId, remoteItem)
-    }
+    map.set(remoteItem.logId, mergeContentItem(existing, remoteItem))
   }
   return Array.from(map.values())
 }
@@ -454,27 +453,38 @@ export async function updateLog(logId: string, updates: Partial<TravelLog>): Pro
   return logs[index]
 }
 
-export async function deleteLog(logId: string): Promise<boolean> {
+export async function deleteLog(
+  logId: string,
+  options?: { fromAdmin?: boolean }
+): Promise<boolean> {
   const logs = getTravelLogs()
   const index = logs.findIndex(l => l.logId === logId)
   
   if (index === -1) return false
   
+  const now = Date.now()
   logs[index].status = 'deleted'
-  logs[index].updateTime = Date.now()
+  logs[index].updateTime = now
+  if (options?.fromAdmin) {
+    logs[index].adminManagedAt = now
+  }
   saveTravelLogs(logs)
   await pushLogToCloud(logs[index])
   return true
 }
 
-export function toggleComments(logId: string): boolean {
+export function toggleComments(logId: string, options?: { fromAdmin?: boolean }): boolean {
   const logs = getTravelLogs()
   const index = logs.findIndex(l => l.logId === logId)
   
   if (index === -1) return false
   
+  const now = Date.now()
   logs[index].allowComments = !logs[index].allowComments
-  logs[index].updateTime = Date.now()
+  logs[index].updateTime = now
+  if (options?.fromAdmin) {
+    logs[index].adminManagedAt = now
+  }
   saveTravelLogs(logs)
   void syncLogToRemote(logs[index])
 
