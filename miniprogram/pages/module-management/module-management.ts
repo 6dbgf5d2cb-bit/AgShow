@@ -6,7 +6,6 @@ import {
   pullAdminSystemConfigAndApply,
   getCurrentSession,
   guardModulePermission,
-  getCurrentSession,
   requireModulePermission
 } from '../../utils/user'
 
