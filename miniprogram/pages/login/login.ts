@@ -15,7 +15,8 @@ import {
   getLocalPhoneFromCode,
   fetchWechatSession,
   fetchPhoneNumber,
-  ensurePrivacyAuthorized,
+  queryPrivacyNeedAuthorization,
+  openPrivacyContract,
   parsePhoneAuthError,
   isPhoneAuthSuccess
 } from '../../utils/auth'
@@ -32,6 +33,7 @@ Page({
     phoneLoading: false,
     errorMessage: '',
     privacyTip: '',
+    privacyAgreed: false,
     showPassword: false,
     showAccountLogin: false,
     showPhoneModal: false,
@@ -68,7 +70,32 @@ Page({
   noop() {},
 
   onAgreePrivacy() {
-    this.setData({ privacyTip: '', errorMessage: '' })
+    this.setData({ privacyAgreed: true, privacyTip: '', errorMessage: '' })
+  },
+
+  openPrivacyContract() {
+    openPrivacyContract()
+  },
+
+  guardPrivacy(): boolean {
+    if (this.data.privacyAgreed) return true
+    this.setData({
+      privacyTip: '请先勾选并同意《用户隐私保护指引》',
+      errorMessage: '请先阅读并同意隐私政策后再登录'
+    })
+    return false
+  },
+
+  async refreshPrivacyState() {
+    const needAuth = await queryPrivacyNeedAuthorization()
+    if (!needAuth) {
+      this.setData({ privacyAgreed: true, privacyTip: '' })
+      return
+    }
+    this.setData({
+      privacyAgreed: false,
+      privacyTip: '请先勾选并同意《用户隐私保护指引》'
+    })
   },
 
   async navigateAfterLogin() {
@@ -99,16 +126,12 @@ Page({
       })
     }
 
-    const ok = await ensurePrivacyAuthorized()
-    if (!ok) {
-      this.setData({
-        privacyTip: '请先阅读并同意《用户隐私保护指引》后再使用一键登录'
-      })
-    }
+    await this.refreshPrivacyState()
   },
 
   async onWeChatLogin() {
     if (this.data.wxLoading || this.data.phoneLoading) return
+    if (!this.guardPrivacy()) return
 
     this.setData({ wxLoading: true, errorMessage: '' })
 
@@ -149,6 +172,7 @@ Page({
   /** 本机号码一键登录（微信组件回调） */
   async onGetPhoneNumber(e: any) {
     if (this.data.phoneLoading) return
+    if (!this.guardPrivacy()) return
 
     const detail = e.detail || {}
 
@@ -200,6 +224,7 @@ Page({
   },
 
   onManualPhoneLogin() {
+    if (!this.guardPrivacy()) return
     const cached = wx.getStorageSync('device_bound_phone') as string
     this.setData({
       showPhoneModal: true,

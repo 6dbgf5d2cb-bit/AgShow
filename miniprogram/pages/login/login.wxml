@@ -17,6 +17,22 @@
         <text>{{privacyTip}}</text>
       </view>
 
+      <view class="privacy-row">
+        <button
+          class="privacy-check-btn"
+          open-type="agreePrivacyAuthorization"
+          bindagreeprivacyauthorization="onAgreePrivacy"
+        >
+          <view class="privacy-checkbox {{privacyAgreed ? 'checked' : ''}}">
+            <text wx:if="{{privacyAgreed}}" class="check-icon">✓</text>
+          </view>
+        </button>
+        <view class="privacy-text">
+          <text>我已阅读并同意</text>
+          <text class="privacy-link" bindtap="openPrivacyContract">《用户隐私保护指引》</text>
+        </view>
+      </view>
+
       <view class="quick-login">
         <button
           class="btn-wechat"
@@ -31,9 +47,8 @@
         <!-- 须同时同意隐私协议；勿加 loading/disabled 以免阻断授权弹窗 -->
         <button
           class="btn-phone"
-          open-type="getPhoneNumber|agreePrivacyAuthorization"
+          open-type="getPhoneNumber"
           bindgetphonenumber="onGetPhoneNumber"
-          bindagreeprivacyauthorization="onAgreePrivacy"
         >
           <text class="btn-icon">📱</text>
           <text>{{phoneLoading ? '登录中...' : '本机号码一键登录'}}</text>
@@ -111,7 +126,8 @@
   </view>
 
   <view class="footer">
-    <text>登录即表示同意相关服务条款与隐私政策</text>
+    <text>登录前请勾选同意</text>
+    <text class="footer-link" bindtap="openPrivacyContract">《用户隐私保护指引》</text>
   </view>
 </view>
 

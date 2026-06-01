@@ -1,4 +1,11 @@
-import { getCurrentSession, getUserById, updateUser, User } from '../../utils/user'
+import {
+  getCurrentSession,
+  getUserById,
+  updateUser,
+  User,
+  guardModulePermission,
+  requireModulePermission
+} from '../../utils/user'
 import { applyResolvedUrl, ensureCloudMediaUrl, resolveMediaUrlMap } from '../../utils/cloud-storage'
 
 Page({
@@ -14,6 +21,10 @@ Page({
   },
 
   onLoad() {
+    const session = getCurrentSession()
+    if (!session?.userId || !guardModulePermission(session.userId, 'profile', 'edit')) {
+      return
+    }
     this.loadUserInfo()
   },
 
@@ -102,6 +113,11 @@ Page({
       region: this.data.region,
       phone: this.data.phone,
       email: this.data.email
+    }
+
+    if (!requireModulePermission(session.userId, 'profile', 'edit')) {
+      wx.hideLoading()
+      return
     }
 
     const result = await updateUser(session.userId, updates)

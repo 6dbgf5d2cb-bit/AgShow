@@ -109,9 +109,17 @@ function callContainer<T>(path: string, method: 'GET' | 'POST', data?: unknown):
         reject(new Error(body?.message || `云托管请求失败(${code})`))
       },
       fail: (err: WechatMiniprogram.GeneralCallbackResult) => {
-        const msg = err.errMsg || ''
-        if (msg.indexOf('envId') !== -1 || msg.indexOf('env') !== -1) {
+        const msg = (err.errMsg || '').toLowerCase()
+        if (msg.indexOf('envid') !== -1 || msg.indexOf('env') !== -1) {
           reject(new Error(CLOUD_ENV_HINT))
+          return
+        }
+        if (msg.indexOf('fetch failed') !== -1 || msg.indexOf('network') !== -1) {
+          reject(
+            new Error(
+              '云托管连接失败：请确认服务已发布、config/api.ts 中 cloudEnv 与 cloudService 正确，且云托管已配置 WX_APPID/WX_SECRET'
+            )
+          )
           return
         }
         reject(new Error(err.errMsg || '云托管调用失败，请确认服务已部署且服务名正确'))

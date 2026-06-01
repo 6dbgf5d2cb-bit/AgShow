@@ -2,6 +2,9 @@ import {
   getAllUsers,
   pullRemoteUsersAndMerge,
   isUserApiEnabled,
+  getCurrentSession,
+  guardModulePermission,
+  requireModulePermission,
   deleteUsers,
   setUserRoles,
   batchUpdateRole,
@@ -64,6 +67,10 @@ Page({
   },
 
   onLoad() {
+    const session = getCurrentSession()
+    if (!session?.userId || !guardModulePermission(session.userId, 'user_management', 'view')) {
+      return
+    }
     this.setData({ cloudSyncEnabled: isUserApiEnabled() })
     this.loadRoleOptions()
     this.loadUsers()
@@ -242,6 +249,11 @@ Page({
   },
 
   async confirmDelete() {
+    const session = getCurrentSession()
+    if (!session?.userId || !requireModulePermission(session.userId, 'user_management', 'delete')) {
+      return
+    }
+
     const { selectedUsers } = this.data
 
     try {
@@ -296,6 +308,11 @@ Page({
   },
 
   async confirmRoleChange() {
+    const session = getCurrentSession()
+    if (!session?.userId || !requireModulePermission(session.userId, 'user_management', 'edit')) {
+      return
+    }
+
     const { selectedUsers, selectedRole, roleAction } = this.data
 
     if (!selectedRole) {
@@ -382,6 +399,11 @@ Page({
   },
 
   async confirmSingleUserRoleChange() {
+    const session = getCurrentSession()
+    if (!session?.userId || !requireModulePermission(session.userId, 'user_management', 'edit')) {
+      return
+    }
+
     const { currentUserId, currentUserRoles } = this.data
 
     try {
@@ -533,6 +555,11 @@ Page({
   },
 
   async confirmLevelChange() {
+    const session = getCurrentSession()
+    if (!session?.userId || !requireModulePermission(session.userId, 'user_management', 'edit')) {
+      return
+    }
+
     const { selectedUsers, selectedLevel } = this.data
 
     if (!selectedLevel) {
@@ -583,6 +610,11 @@ Page({
   },
 
   async confirmBatchAdd() {
+    const session = getCurrentSession()
+    if (!session?.userId || !requireModulePermission(session.userId, 'user_management', 'create')) {
+      return
+    }
+
     const { batchUsernames, batchPhones } = this.data
     
     if (!batchUsernames.trim()) {

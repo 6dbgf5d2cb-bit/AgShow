@@ -4,7 +4,7 @@
       <view class="share-btn" bindtap="onShareMenu">
         <text>分享</text>
       </view>
-      <view wx:if="{{isPublisher || isAdmin}}" class="comment-toggle" bindtap="toggleComments">
+      <view wx:if="{{canModerate}}" class="comment-toggle" bindtap="toggleComments">
         <text>{{allowComments ? '🔒' : '🔓'}}</text>
       </view>
     </view>
@@ -13,9 +13,9 @@
   <view class="action-bar">
     <view class="action-left"></view>
     <view class="action-center">
-      <view wx:if="{{isPublisher || isAdmin}}" class="header-actions">
-        <button class="action-btn edit-btn" bindtap="editLog">编辑</button>
-        <button class="action-btn delete-btn" bindtap="deleteLog">删除</button>
+      <view wx:if="{{canEdit || canDelete}}" class="header-actions">
+        <button wx:if="{{canEdit}}" class="action-btn edit-btn" bindtap="editLog">编辑</button>
+        <button wx:if="{{canDelete}}" class="action-btn delete-btn" bindtap="deleteLog">删除</button>
       </view>
     </view>
     <view class="action-right"></view>
@@ -125,7 +125,7 @@
             <text class="comment-time">{{formatCommentTime(item.createTime)}}</text>
           </view>
           <text class="comment-text">{{item.content}}</text>
-          <view wx:if="{{(isAdmin || (hasSession && getCurrentUserId() === item.authorId))}}" class="comment-actions">
+          <view wx:if="{{canModerate || (hasSession && getCurrentUserId() === item.authorId)}}" class="comment-actions">
             <text class="comment-action" bindtap="deleteComment" data-commentid="{{item.commentId}}">删除</text>
           </view>
         </view>

@@ -4,7 +4,10 @@ import {
   PermissionAction,
   HomePageConfig,
   saveHomePageConfigsToStorage,
-  pullAdminSystemConfigAndApply
+  pullAdminSystemConfigAndApply,
+  getCurrentSession,
+  guardModulePermission,
+  requireModulePermission
 } from '../../utils/user'
 
 Page({
@@ -13,6 +16,10 @@ Page({
   },
 
   async onLoad() {
+    const session = getCurrentSession()
+    if (!session?.userId || !guardModulePermission(session.userId, 'system_settings', 'view')) {
+      return
+    }
     try {
       await pullAdminSystemConfigAndApply()
     } catch {
@@ -32,6 +39,11 @@ Page({
   },
 
   toggleEnabled(e: any) {
+    const session = getCurrentSession()
+    if (!session?.userId || !requireModulePermission(session.userId, 'system_settings', 'edit')) {
+      return
+    }
+
     const moduleId = e.currentTarget.dataset.id
     const { configs } = this.data
     
@@ -46,6 +58,11 @@ Page({
   },
 
   togglePermission(e: any) {
+    const session = getCurrentSession()
+    if (!session?.userId || !requireModulePermission(session.userId, 'system_settings', 'edit')) {
+      return
+    }
+
     const moduleId = e.currentTarget.dataset.id
     const action = e.currentTarget.dataset.action as PermissionAction
     const { configs } = this.data
@@ -67,6 +84,11 @@ Page({
   },
 
   saveConfig() {
+    const session = getCurrentSession()
+    if (!session?.userId || !requireModulePermission(session.userId, 'system_settings', 'edit')) {
+      return
+    }
+
     saveHomePageConfigsToStorage(this.data.configs)
     
     wx.showToast({

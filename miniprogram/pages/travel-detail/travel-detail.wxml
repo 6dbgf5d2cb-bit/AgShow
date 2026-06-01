@@ -22,11 +22,11 @@
     <view class="main-section">
       <text class="route-title">{{route.title}}</text>
       
-      <view wx:if="{{isPublisher || isAdmin}}" class="content-actions">
-        <view class="action-btn edit" bindtap="editRoute">
+      <view wx:if="{{canEdit || canDelete}}" class="content-actions">
+        <view wx:if="{{canEdit}}" class="action-btn edit" bindtap="editRoute">
           <text>编辑</text>
         </view>
-        <view class="action-btn delete" bindtap="deleteRoute">
+        <view wx:if="{{canDelete}}" class="action-btn delete" bindtap="deleteRoute">
           <text>删除</text>
         </view>
       </view>

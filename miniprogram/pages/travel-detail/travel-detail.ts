@@ -1,6 +1,15 @@
 import { getRouteById, pullRemoteRoutesAndMerge, getPublisherInfo, incrementViewCount, canViewPhone, makePhoneCall, deleteRoute, signUpRoute, isUserSignedUp, DifficultyConfig, RouteParticipant } from '../../utils/travel'
 import { applyResolvedUrl, resolveMediaUrlMap } from '../../utils/cloud-storage'
-import { getCurrentSession, getUserById, MemberLevelConfig, MemberLevel, checkModulePermission } from '../../utils/user'
+import {
+  getCurrentSession,
+  getUserById,
+  MemberLevelConfig,
+  MemberLevel,
+  checkModulePermission,
+  canManageContent,
+  requireModulePermission,
+  userHasAdminRole
+} from '../../utils/user'
 
 Page({
   data: {
@@ -15,6 +24,8 @@ Page({
     publishTime: '',
     isPublisher: false,
     isAdmin: false,
+    canEdit: false,
+    canDelete: false,
     participants: [] as RouteParticipant[],
     participantCount: 0,
     isSignedUp: false,
@@ -80,7 +91,13 @@ Page({
 
     const currentUser = session ? getUserById(session.userId) : null
     const isPublisher = currentUser ? route.publisherId === currentUser.userId : false
-    const isAdmin = currentUser ? currentUser.roles.includes('admin') : false
+    const isAdmin = session ? userHasAdminRole(session.userId) : false
+    const canEdit = session
+      ? canManageContent(session.userId, 'travel', 'edit', isPublisher)
+      : false
+    const canDelete = session
+      ? canManageContent(session.userId, 'travel', 'delete', isPublisher)
+      : false
     const isSignedUp = session ? isUserSignedUp(route.routeId, session.userId) : false
     const participants = route.participants || []
     const participantCount = participants.length
@@ -110,6 +127,8 @@ Page({
       publishTime: this.formatDate(route.publishTime),
       isPublisher,
       isAdmin,
+      canEdit,
+      canDelete,
       participants,
       participantCount,
       isSignedUp,
@@ -119,12 +138,22 @@ Page({
   },
 
   editRoute() {
+    const session = getCurrentSession()
+    if (!session || !this.data.canEdit) {
+      if (session) requireModulePermission(session.userId, 'travel', 'edit')
+      return
+    }
     wx.navigateTo({
       url: `/pages/travel-publish/travel-publish?id=${this.data.routeId}`
     })
   },
 
   deleteRoute() {
+    const session = getCurrentSession()
+    if (!session || !this.data.canDelete) {
+      if (session) requireModulePermission(session.userId, 'travel', 'delete')
+      return
+    }
     wx.showModal({
       title: '确认删除',
       content: '确定要删除这条线路吗？删除后无法恢复。',

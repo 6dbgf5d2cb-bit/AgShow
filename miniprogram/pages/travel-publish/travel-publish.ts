@@ -1,5 +1,5 @@
 import { createRoute, updateRoute, getRouteById, SeasonOptions, TagOptions, TravelRoute } from '../../utils/travel'
-import { getCurrentSession, checkModulePermission } from '../../utils/user'
+import { getCurrentSession, checkModulePermission, requireModulePermission } from '../../utils/user'
 import { ensureCloudMediaUrl, ensureCloudMediaUrls } from '../../utils/cloud-storage'
 
 interface OptionWithState {
@@ -217,6 +217,11 @@ Page({
         title: '请先登录',
         icon: 'none'
       })
+      return
+    }
+
+    const action = this.data.isEdit ? 'edit' : 'create'
+    if (!requireModulePermission(session.userId, 'travel', action)) {
       return
     }
 

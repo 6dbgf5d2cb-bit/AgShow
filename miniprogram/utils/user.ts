@@ -2019,24 +2019,29 @@ export async function pullAdminSystemConfigAndApply(): Promise<void> {
   applyAdminSystemConfigFromRemote(config)
 }
 
-function checkModuleConfigPermission(moduleId: string, action: PermissionAction): boolean {
-  const moduleConfig = ModuleConfigs.find(m => m.id === moduleId)
-  return moduleConfig?.enabled && moduleConfig.permissions[action] === true
+/** 是否拥有 admin 角色（豁免三重权限校验） */
+export function userHasAdminRole(userId: string): boolean {
+  const user = getUserById(userId)
+  return !!(user?.roles && user.roles.includes('admin'))
 }
 
+/** 模块管理：模块开关 + 对应操作权限 */
+function checkModuleConfigPermission(moduleId: string, action: PermissionAction): boolean {
+  const moduleConfig = getStoredModuleConfigs().find((m) => m.id === moduleId)
+  return !!(moduleConfig?.enabled && moduleConfig.permissions?.[action] === true)
+}
+
+/** 角色管理：任一角色在该模块具备对应操作（不含 RoleConfig 的 all 捷径） */
 function checkRolePermission(userId: string, moduleId: string, action: PermissionAction): boolean {
   const user = getUserById(userId)
-  if (!user || !Array.isArray(user.roles) || user.roles.length === 0) return false
-
-  for (const role of user.roles) {
-    if (hasPermission(role, 'all')) return true
-  }
+  if (!user?.roles?.length) return false
 
   const latestPermissions = getStoredRolePermissions()
 
   for (const role of user.roles) {
+    if (role === 'admin') continue
     const rolePermissions = latestPermissions[role]
-    if (rolePermissions?.[moduleId]?.[action]) {
+    if (rolePermissions?.[moduleId]?.[action] === true) {
       return true
     }
   }
@@ -2044,20 +2049,26 @@ function checkRolePermission(userId: string, moduleId: string, action: Permissio
   return false
 }
 
+/** 首页配置：模块展示开关 + 对应操作权限 */
 function checkHomePagePermission(moduleId: string, action: PermissionAction): boolean {
-  const homeConfig = HomePageConfigs.find(h => h.moduleId === moduleId)
-  return homeConfig?.enabled && homeConfig.permissions[action] === true
+  const homeConfig = getStoredHomePageConfigs().find((h) => h.moduleId === moduleId)
+  return !!(homeConfig?.enabled && homeConfig.permissions?.[action] === true)
 }
 
+/**
+ * 校验用户对某模块某操作的权限。
+ * 非管理员：模块管理、角色权限、首页配置 三项须同时为 true，缺一不可。
+ * 管理员（admin 角色）：豁免，直接通过。
+ */
 export function checkModulePermission(userId: string, moduleId: string, action: PermissionAction): boolean {
-  const user = getUserById(userId)
-  if (!user) return false
-  
-  const moduleAllowed = checkModuleConfigPermission(moduleId, action)
-  const roleAllowed = checkRolePermission(userId, moduleId, action)
-  const homeAllowed = checkHomePagePermission(moduleId, action)
-  
-  return moduleAllowed && roleAllowed && homeAllowed
+  if (!userId) return false
+  if (userHasAdminRole(userId)) return true
+
+  return (
+    checkModuleConfigPermission(moduleId, action) &&
+    checkRolePermission(userId, moduleId, action) &&
+    checkHomePagePermission(moduleId, action)
+  )
 }
 
 export function checkAllModulePermissions(userId: string, moduleId: string): { view: boolean; create: boolean; edit: boolean; delete: boolean } {
@@ -2067,4 +2078,78 @@ export function checkAllModulePermissions(userId: string, moduleId: string): { v
     edit: checkModulePermission(userId, moduleId, 'edit'),
     delete: checkModulePermission(userId, moduleId, 'delete')
   }
+}
+
+const PERMISSION_ACTION_LABELS: Record<PermissionAction, string> = {
+  view: '查看',
+  create: '新增',
+  edit: '编辑',
+  delete: '删除'
+}
+
+/** 无权限时的统一提示 */
+export function denyModuleAction(action: PermissionAction): void {
+  wx.showToast({
+    title: `无${PERMISSION_ACTION_LABELS[action]}权限（须模块、角色、首页配置同时开启）`,
+    icon: 'none',
+    duration: 2500
+  })
+}
+
+/** 操作前校验，不通过则提示并返回 false */
+export function requireModulePermission(
+  userId: string,
+  moduleId: string,
+  action: PermissionAction
+): boolean {
+  if (checkModulePermission(userId, moduleId, action)) return true
+  denyModuleAction(action)
+  return false
+}
+
+/**
+ * 内容级操作：管理员任意；非管理员须为内容发布者且具备三重权限
+ */
+export function canManageContent(
+  userId: string,
+  moduleId: string,
+  action: PermissionAction,
+  isOwner: boolean
+): boolean {
+  if (userHasAdminRole(userId)) {
+    return checkModulePermission(userId, moduleId, action)
+  }
+  return isOwner && checkModulePermission(userId, moduleId, action)
+}
+
+/** 模块级管理（如批量删除），仅需三重权限，不限是否本人 */
+export function canManageModule(
+  userId: string,
+  moduleId: string,
+  action: PermissionAction
+): boolean {
+  return checkModulePermission(userId, moduleId, action)
+}
+
+/** 页面入口：无权限时提示并返回上一页 */
+export function guardModulePermission(
+  userId: string,
+  moduleId: string,
+  action: PermissionAction = 'view'
+): boolean {
+  if (checkModulePermission(userId, moduleId, action)) return true
+  wx.showToast({
+    title: '无权限访问（须模块、角色、首页配置同时开启）',
+    icon: 'none',
+    duration: 2500
+  })
+  setTimeout(() => {
+    const pages = getCurrentPages()
+    if (pages.length > 1) {
+      wx.navigateBack()
+    } else {
+      wx.redirectTo({ url: '/pages/member/member' })
+    }
+  }, 1600)
+  return false
 }

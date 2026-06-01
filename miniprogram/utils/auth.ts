@@ -77,31 +77,42 @@ export function clearLocalBoundPhone(): void {
   wx.removeStorageSync(DEVICE_BOUND_PHONE_KEY)
 }
 
-/** 登录前确保用户已同意隐私协议 */
-export function ensurePrivacyAuthorized(): Promise<boolean> {
+/** 查询是否仍需用户授权隐私协议 */
+export function queryPrivacyNeedAuthorization(): Promise<boolean> {
   return new Promise((resolve) => {
     if (!wx.getPrivacySetting) {
-      resolve(true)
+      resolve(false)
       return
     }
     wx.getPrivacySetting({
-      success: (res) => {
-        if (!res.needAuthorization) {
-          resolve(true)
-          return
-        }
-        if (!wx.requirePrivacyAuthorize) {
-          resolve(false)
-          return
-        }
-        wx.requirePrivacyAuthorize({
-          success: () => resolve(true),
-          fail: () => resolve(false)
-        })
-      },
-      fail: () => resolve(true)
+      success: (res) => resolve(!!res.needAuthorization),
+      fail: () => resolve(false)
     })
   })
+}
+
+/** 打开微信隐私保护指引页面 */
+export function openPrivacyContract(): void {
+  if (wx.openPrivacyContract) {
+    wx.openPrivacyContract({
+      fail: () => {
+        wx.showToast({ title: '暂无法打开隐私指引', icon: 'none' })
+      }
+    })
+    return
+  }
+  wx.showToast({ title: '请升级微信版本后查看隐私指引', icon: 'none' })
+}
+
+function friendlyRemoteError(message: string, fallback: string): string {
+  const m = message || ''
+  if (m.indexOf('fetch failed') !== -1) {
+    return '无法连接云托管，请检查服务是否已发布、环境 ID 与服务名是否正确'
+  }
+  if (m.indexOf('WX_APPID') !== -1 || m.indexOf('WX_SECRET') !== -1) {
+    return m
+  }
+  return m || fallback
 }
 
 /** 解析手机号授权失败原因 */
@@ -152,7 +163,7 @@ export async function fetchWechatSession(wxCode: string): Promise<ServerWechatLo
   if (data?.openId) {
     return { openId: data.openId, unionId: data.unionId }
   }
-  throw new Error(data?.message || '服务端微信登录失败')
+  throw new Error(friendlyRemoteError(data?.message || '', '服务端微信登录失败'))
 }
 
 export async function fetchPhoneNumber(
@@ -169,7 +180,7 @@ export async function fetchPhoneNumber(
   if (data?.phone) {
     return { phone: data.phone, openId: data.openId }
   }
-  throw new Error(data?.message || '服务端解密手机号失败')
+  throw new Error(friendlyRemoteError(data?.message || '', '服务端解密手机号失败'))
 }
 
 /** 是否已配置云端（云托管或 HTTPS） */

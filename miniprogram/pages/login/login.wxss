@@ -191,6 +191,57 @@ page {
   line-height: 1.5;
 }
 
+.privacy-row {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 28rpx;
+}
+
+.privacy-check-btn {
+  margin: 0;
+  padding: 0;
+  width: 48rpx;
+  height: 48rpx;
+  min-height: 48rpx;
+  line-height: 1;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  flex-shrink: 0;
+}
+
+.privacy-check-btn::after {
+  border: none;
+}
+
+.privacy-checkbox {
+  width: 40rpx;
+  height: 40rpx;
+  border: 2rpx solid #ccc;
+  border-radius: 8rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.privacy-checkbox.checked {
+  background: #667eea;
+  border-color: #667eea;
+}
+
+.privacy-text {
+  flex: 1;
+  margin-left: 12rpx;
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.6;
+}
+
+.privacy-link,
+.footer-link {
+  color: #667eea;
+}
+
 .btn-icon {
   font-size: 36rpx;
 }
@@ -351,4 +402,11 @@ page {
 .footer text {
   font-size: 24rpx;
   color: rgba(255, 255, 255, 0.75);
+}
+
+.footer-link {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.95);
+  text-decoration: underline;
+  margin-left: 4rpx;
 }

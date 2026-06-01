@@ -1,6 +1,16 @@
 import { getLogById, pullRemoteLogsAndMerge, getPublisherInfo, incrementViewCount, toggleLike, addComment, deleteComment, deleteLog, toggleComments, TravelLog, TravelLogComment } from '../../utils/travellog'
 import { applyResolvedUrl, resolveMediaUrlMap } from '../../utils/cloud-storage'
-import { getCurrentSession, getUserById, MemberLevel, MemberLevelConfig } from '../../utils/user'
+import {
+  getCurrentSession,
+  getUserById,
+  MemberLevel,
+  MemberLevelConfig,
+  canManageContent,
+  requireModulePermission,
+  userHasAdminRole,
+  checkModulePermission,
+  guardModulePermission
+} from '../../utils/user'
 import {
   fetchMpShareConfig,
   isContentApiEnabled,
@@ -23,6 +33,9 @@ Page({
     publishTime: '',
     isPublisher: false,
     isAdmin: false,
+    canEdit: false,
+    canDelete: false,
+    canModerate: false,
     hasSession: false,
     comments: [] as TravelLogComment[],
     newComment: '',
@@ -76,6 +89,16 @@ Page({
   },
 
   async loadLog() {
+    const session = getCurrentSession()
+    if (!session?.userId) {
+      wx.showToast({ title: '请先登录', icon: 'none' })
+      setTimeout(() => wx.navigateBack(), 1500)
+      return
+    }
+    if (!guardModulePermission(session.userId, 'travellog', 'view')) {
+      return
+    }
+
     try {
       await pullRemoteLogsAndMerge()
     } catch {
@@ -95,12 +118,16 @@ Page({
 
     const publisherInfo = getPublisherInfo(log.publisherId)
 
-    const session = getCurrentSession()
-    const canView = session ? this.canViewPhone(session.userId) : false
+    const canView = this.canViewPhone(session.userId)
 
-    const currentUser = session ? getUserById(session.userId) : null
+    const currentUser = getUserById(session.userId)
     const isPublisher = currentUser ? log.publisherId === currentUser.userId : false
-    const isAdmin = currentUser ? currentUser.roles.includes('admin') : false
+    const isAdmin = userHasAdminRole(session.userId)
+    const canEdit = canManageContent(session.userId, 'travellog', 'edit', isPublisher)
+    const canDelete = canManageContent(session.userId, 'travellog', 'delete', isPublisher)
+    const canModerate =
+      canManageContent(session.userId, 'travellog', 'edit', isPublisher) ||
+      checkModulePermission(session.userId, 'travellog', 'delete')
 
     const likesKey = `travel_log_likes_${this.data.logId}`
     const likes = wx.getStorageSync(likesKey) || []
@@ -123,7 +150,10 @@ Page({
       publishTime: this.formatDate(log.publishTime),
       isPublisher,
       isAdmin,
-      hasSession: !!session,
+      canEdit,
+      canDelete,
+      canModerate,
+      hasSession: true,
       comments: log.comments,
       allowComments: log.allowComments,
       liked,
@@ -229,8 +259,19 @@ Page({
   },
 
   deleteComment(event: { currentTarget: { dataset: { commentid: string } } }) {
+    const session = getCurrentSession()
+    if (!session) return
     const commentId = event.currentTarget.dataset.commentid
-    
+    const comment = this.data.comments.find((c) => c.commentId === commentId)
+    const isCommentOwner = comment?.authorId === session.userId
+    if (
+      !canManageContent(session.userId, 'travellog', 'delete', isCommentOwner) &&
+      !canManageContent(session.userId, 'travellog', 'edit', !!this.data.isPublisher)
+    ) {
+      requireModulePermission(session.userId, 'travellog', 'delete')
+      return
+    }
+
     wx.showModal({
       title: '确认删除',
       content: '确定要删除这条评论吗？',
@@ -259,8 +300,13 @@ Page({
   },
 
   toggleComments() {
+    const session = getCurrentSession()
+    if (!session || !this.data.canModerate) {
+      if (session) requireModulePermission(session.userId, 'travellog', 'edit')
+      return
+    }
     const success = toggleComments(this.data.logId, {
-      fromAdmin: !!this.data.isAdmin
+      fromAdmin: userHasAdminRole(session.userId)
     })
     if (success) {
       this.setData({ allowComments: !this.data.allowComments })
@@ -272,12 +318,22 @@ Page({
   },
 
   editLog() {
+    const session = getCurrentSession()
+    if (!session || !this.data.canEdit) {
+      if (session) requireModulePermission(session.userId, 'travellog', 'edit')
+      return
+    }
     wx.navigateTo({
       url: `/pages/travellog-publish/travellog-publish?logId=${this.data.logId}`
     })
   },
 
   deleteLog() {
+    const session = getCurrentSession()
+    if (!session || !this.data.canDelete) {
+      if (session) requireModulePermission(session.userId, 'travellog', 'delete')
+      return
+    }
     wx.showModal({
       title: '确认删除',
       content: '确定要删除这篇旅行记吗？删除后无法恢复。',

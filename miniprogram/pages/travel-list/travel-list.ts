@@ -1,6 +1,6 @@
 import { getActiveRoutes, pullRemoteRoutesAndMerge, DifficultyConfig, canPublishRoute } from '../../utils/travel'
 import { applyResolvedUrl, resolveMediaUrlMap } from '../../utils/cloud-storage'
-import { getCurrentSession } from '../../utils/user'
+import { getCurrentSession, guardModulePermission } from '../../utils/user'
 
 Page({
   data: {
@@ -12,6 +12,10 @@ Page({
   },
 
   onLoad() {
+    const session = getCurrentSession()
+    if (!session?.userId || !guardModulePermission(session.userId, 'travel', 'view')) {
+      return
+    }
     this.loadRoutes()
     this.checkPublishPermission()
   },

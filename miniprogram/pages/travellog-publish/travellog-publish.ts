@@ -1,5 +1,10 @@
-import { createLog, canPublishLog, getLogById, updateLog, TravelLog } from '../../utils/travellog'
-import { getCurrentSession } from '../../utils/user'
+import { createLog, getLogById, updateLog, TravelLog } from '../../utils/travellog'
+import {
+  getCurrentSession,
+  checkModulePermission,
+  requireModulePermission,
+  canPublishLog
+} from '../../utils/user'
 import { ensureCloudMediaUrls } from '../../utils/cloud-storage'
 
 Page({
@@ -28,6 +33,17 @@ Page({
       return
     }
     
+    if (options?.logId) {
+      if (!checkModulePermission(session.userId, 'travellog', 'edit')) {
+        requireModulePermission(session.userId, 'travellog', 'edit')
+        setTimeout(() => wx.navigateBack(), 1600)
+        return
+      }
+      this.setData({ isEdit: true, logId: options.logId })
+      this.loadLog(options.logId)
+      return
+    }
+
     const result = canPublishLog(session.userId)
     if (!result.canPublish) {
       wx.showToast({
@@ -36,11 +52,6 @@ Page({
       })
       setTimeout(() => wx.navigateBack(), 1500)
       return
-    }
-
-    if (options?.logId) {
-      this.setData({ isEdit: true, logId: options.logId })
-      this.loadLog(options.logId)
     }
   },
 
@@ -162,6 +173,11 @@ Page({
         title: '请先登录',
         icon: 'none'
       })
+      return
+    }
+
+    const action = this.data.isEdit ? 'edit' : 'create'
+    if (!requireModulePermission(session.userId, 'travellog', action)) {
       return
     }
 

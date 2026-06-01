@@ -1,4 +1,4 @@
-import { getUserById, MemberLevel, User } from './user'
+import { getUserById, MemberLevel, User, checkModulePermission, userHasAdminRole } from './user'
 import {
   isContentApiEnabled,
   fetchRemoteRoutes,
@@ -227,12 +227,16 @@ export function canPublishRoute(userId: string): { canPublish: boolean; message:
   if (!user) {
     return { canPublish: false, message: '用户不存在' }
   }
-  
+
+  if (!userHasAdminRole(userId) && !checkModulePermission(userId, 'travel', 'create')) {
+    return { canPublish: false, message: '无自驾游发布权限（需在模块、角色、首页配置中均开启新增）' }
+  }
+
   const vipLevels: MemberLevel[] = ['vip', 'premium']
   if (!vipLevels.includes(user.memberLevel)) {
     return { canPublish: false, message: '仅贵宾会员及以上可以发布线路' }
   }
-  
+
   return { canPublish: true, message: '' }
 }
 

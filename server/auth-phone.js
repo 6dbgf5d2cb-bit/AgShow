@@ -31,10 +31,31 @@ const LOGS_FILE = path.join(DATA_DIR, 'travel_logs.json')
 let accessToken = ''
 let tokenExpireAt = 0
 
+function assertWxCredentials() {
+  if (!APPID || !SECRET) {
+    throw new Error('云托管未配置 WX_APPID / WX_SECRET，请在服务环境变量中填写小程序 AppID 与 AppSecret')
+  }
+}
+
+async function wxApiFetch(url, options) {
+  assertWxCredentials()
+  try {
+    return await fetch(url, options)
+  } catch (e) {
+    const hint = e && e.message ? String(e.message) : '网络错误'
+    if (hint.indexOf('fetch failed') !== -1) {
+      throw new Error(
+        '无法连接微信接口，请检查云托管是否开通外网访问，以及 WX_APPID、WX_SECRET 是否正确'
+      )
+    }
+    throw new Error(`连接微信服务器失败：${hint}`)
+  }
+}
+
 async function getAccessToken() {
   if (accessToken && Date.now() < tokenExpireAt) return accessToken
   const url = `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${APPID}&secret=${SECRET}`
-  const res = await fetch(url)
+  const res = await wxApiFetch(url)
   const data = await res.json()
   if (!data.access_token) {
     throw new Error(data.errmsg || '获取 access_token 失败')
@@ -45,8 +66,9 @@ async function getAccessToken() {
 }
 
 async function code2Session(code) {
+  if (!code) throw new Error('缺少微信登录 code')
   const url = `https://api.weixin.qq.com/sns/jscode2session?appid=${APPID}&secret=${SECRET}&js_code=${code}&grant_type=authorization_code`
-  const res = await fetch(url)
+  const res = await wxApiFetch(url)
   const data = await res.json()
   if (data.errcode) throw new Error(data.errmsg || 'code2Session 失败')
   return data
@@ -55,7 +77,7 @@ async function code2Session(code) {
 async function getPhoneByCode(phoneCode) {
   const token = await getAccessToken()
   const url = `https://api.weixin.qq.com/wxa/business/getuserphonenumber?access_token=${token}`
-  const res = await fetch(url, {
+  const res = await wxApiFetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ code: phoneCode })

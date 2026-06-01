@@ -12,7 +12,7 @@
     </view>
     
     <view class="action-center">
-      <text wx:if="{{isAdmin && !isSelectMode}}" class="manage-btn" bindtap="enterSelectMode">管理</text>
+      <text wx:if="{{canDelete && !isSelectMode}}" class="manage-btn" bindtap="enterSelectMode">管理</text>
       <text wx:if="{{isSelectMode}}" class="manage-btn exit-btn" bindtap="cancelSelectMode">退出</text>
     </view>
     

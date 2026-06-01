@@ -1,3 +1,4 @@
+import { getCurrentSession, guardModulePermission } from '../../utils/user'
 import {
   generateBaZi,
   analyzeSymptoms,
@@ -37,6 +38,10 @@ Page({
   },
 
   onLoad() {
+    const session = getCurrentSession()
+    if (!session?.userId || !guardModulePermission(session.userId, 'health', 'view')) {
+      return
+    }
     const slots = getTimeSlots()
     this.setData({
       timeSlots: slots,

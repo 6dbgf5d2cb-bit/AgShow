@@ -1,6 +1,13 @@
 import { getActiveLogs, pullRemoteLogsAndMerge, canPublishLog, deleteLog, TravelLog, getPublisherInfo } from '../../utils/travellog'
 import { applyResolvedUrl, resolveMediaUrlMap } from '../../utils/cloud-storage'
-import { getCurrentSession, getUserById } from '../../utils/user'
+import {
+  getCurrentSession,
+  guardModulePermission,
+  checkModulePermission,
+  canManageModule,
+  requireModulePermission,
+  userHasAdminRole
+} from '../../utils/user'
 import { MemberLevel, MemberLevelConfig } from '../../utils/user'
 
 Page({
@@ -10,6 +17,8 @@ Page({
     canPublish: false,
     publishMessage: '',
     isAdmin: false,
+    canCreate: false,
+    canDelete: false,
     isSelectMode: false,
     selectedLogs: [] as string[],
     selectAll: false,
@@ -17,22 +26,32 @@ Page({
   },
 
   onLoad() {
-    this.loadLogs()
-
     const session = getCurrentSession()
-    if (session) {
-      const result = canPublishLog(session.userId)
-      const user = getUserById(session.userId)
-      this.setData({
-        hasSession: true,
-        canPublish: result.canPublish,
-        publishMessage: result.message,
-        isAdmin: user?.roles.includes('admin') || false
-      })
+    if (!session?.userId || !guardModulePermission(session.userId, 'travellog', 'view')) {
+      return
     }
+
+    this.loadLogs()
+    this.refreshActionPermissions(session.userId)
+  },
+
+  refreshActionPermissions(userId: string) {
+    const result = canPublishLog(userId)
+    this.setData({
+      hasSession: true,
+      canPublish: result.canPublish,
+      publishMessage: result.message,
+      isAdmin: userHasAdminRole(userId),
+      canCreate: checkModulePermission(userId, 'travellog', 'create'),
+      canDelete: canManageModule(userId, 'travellog', 'delete')
+    })
   },
 
   onShow() {
+    const session = getCurrentSession()
+    if (session?.userId) {
+      this.refreshActionPermissions(session.userId)
+    }
     this.loadLogs()
   },
 
@@ -97,6 +116,11 @@ Page({
   },
 
   enterSelectMode() {
+    const session = getCurrentSession()
+    if (!session?.userId || !this.data.canDelete) {
+      if (session) requireModulePermission(session.userId, 'travellog', 'delete')
+      return
+    }
     this.setData({
       isSelectMode: true
     })
@@ -161,6 +185,11 @@ Page({
   },
 
   batchDelete() {
+    const session = getCurrentSession()
+    if (!session?.userId || !requireModulePermission(session.userId, 'travellog', 'delete')) {
+      return
+    }
+
     const { selectedLogs } = this.data
 
     if (selectedLogs.length === 0) {

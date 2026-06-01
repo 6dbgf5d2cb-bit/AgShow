@@ -8,7 +8,10 @@ import {
   saveRolePermissionsToConfig,
   removeRolePermissionsFromConfig,
   pullAdminSystemConfigAndApply,
-  getRoleConfig
+  getRoleConfig,
+  getCurrentSession,
+  guardModulePermission,
+  requireModulePermission
 } from '../../utils/user'
 
 Page({
@@ -31,6 +34,10 @@ Page({
   },
 
   async onLoad() {
+    const session = getCurrentSession()
+    if (!session?.userId || !guardModulePermission(session.userId, 'role_management', 'view')) {
+      return
+    }
     try {
       await pullAdminSystemConfigAndApply()
     } catch {
@@ -85,6 +92,11 @@ Page({
   },
 
   togglePermission(e: any) {
+    const session = getCurrentSession()
+    if (!session?.userId || !requireModulePermission(session.userId, 'role_management', 'edit')) {
+      return
+    }
+
     const moduleId = e.currentTarget.dataset.module
     const action = e.currentTarget.dataset.action as PermissionAction
     const { permissions, activeRole } = this.data
@@ -153,7 +165,13 @@ Page({
   },
 
   saveRole() {
+    const session = getCurrentSession()
     const { editingRole, newRoleKey, newRoleName, selectedPermissions, roles } = this.data
+
+    const action = editingRole ? 'edit' : 'create'
+    if (!session?.userId || !requireModulePermission(session.userId, 'role_management', action)) {
+      return
+    }
     
     if (!newRoleKey || !newRoleName) {
       wx.showToast({
@@ -231,6 +249,11 @@ Page({
   },
 
   confirmDelete() {
+    const session = getCurrentSession()
+    if (!session?.userId || !requireModulePermission(session.userId, 'role_management', 'delete')) {
+      return
+    }
+
     const { selectedRoles } = this.data
     
     selectedRoles.forEach(role => {
@@ -249,6 +272,11 @@ Page({
   },
 
   performDeleteRole(role: string) {
+    const session = getCurrentSession()
+    if (!session?.userId || !requireModulePermission(session.userId, 'role_management', 'delete')) {
+      return
+    }
+
     removeRoleFromConfig(role)
     removeRolePermissionsFromConfig(role)
     

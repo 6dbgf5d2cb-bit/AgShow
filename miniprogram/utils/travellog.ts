@@ -1,4 +1,4 @@
-import { getUserById, MemberLevel, User } from './user'
+import { getUserById, MemberLevel, User, checkModulePermission, userHasAdminRole } from './user'
 import {
   isContentApiEnabled,
   fetchRemoteLogs,
@@ -259,11 +259,15 @@ export function canPublishLog(userId: string): { canPublish: boolean; message: s
   if (!user) {
     return { canPublish: false, message: '用户不存在' }
   }
-  
+
   if (user.status !== 'normal') {
     return { canPublish: false, message: '账户状态异常，无法发布' }
   }
-  
+
+  if (!userHasAdminRole(userId) && !checkModulePermission(userId, 'travellog', 'create')) {
+    return { canPublish: false, message: '无旅行记发布权限（需在模块、角色、首页配置中均开启新增）' }
+  }
+
   return { canPublish: true, message: '' }
 }
 

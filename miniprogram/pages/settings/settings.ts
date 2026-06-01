@@ -1,4 +1,11 @@
-import { getCurrentSession, getUserById, updatePassword, checkModulePermission, User } from '../../utils/user'
+import {
+  getCurrentSession,
+  getUserById,
+  updatePassword,
+  checkModulePermission,
+  requireModulePermission,
+  User
+} from '../../utils/user'
 
 interface ModuleItem {
   id: string
@@ -147,6 +154,10 @@ Page({
   },
 
   goToProfileEdit() {
+    const session = getCurrentSession()
+    if (!session?.userId || !requireModulePermission(session.userId, 'profile', 'edit')) {
+      return
+    }
     wx.navigateTo({
       url: '/pages/profile-edit/profile-edit'
     })
@@ -202,6 +213,10 @@ Page({
     }
     if (newPassword !== confirmPassword) {
       wx.showToast({ title: '两次输入的新密码不一致', icon: 'none' })
+      return
+    }
+
+    if (!requireModulePermission(session.userId, 'settings', 'edit')) {
       return
     }
 
