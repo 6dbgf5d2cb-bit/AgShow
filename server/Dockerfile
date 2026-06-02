@@ -1,7 +1,11 @@
 FROM node:18-alpine
 
-# Alpine 默认无根证书，访问 api.weixin.qq.com 会 fetch failed
-RUN apk add --no-cache ca-certificates
+# 根证书 + bash（云托管「开放接口服务」依赖 shell）
+RUN apk add --no-cache ca-certificates bash \
+  && update-ca-certificates
+
+ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+ENV NODE_OPTIONS=--use-openssl-ca
 
 WORKDIR /app
 

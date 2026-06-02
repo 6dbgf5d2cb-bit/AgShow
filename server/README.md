@@ -26,6 +26,7 @@
 |------|------|
 | `WX_APPID` | 小程序 AppID（须与当前小程序一致） |
 | `WX_SECRET` | 小程序 AppSecret（**不是** `WX_SECERT`，拼写错会导致读不到） |
+| `WX_API_USE_HTTP` | 设为 `1` 时容器内用 **HTTP** 访问 `api.weixin.qq.com`（云托管开启「开放接口服务」且报自签证书时必设；检测到 `/app/cert/certificate.crt` 时会自动走 HTTP） |
 | `PORT` | `80`（默认已设） |
 | `DATA_DIR` | `/app/data`（用户 JSON 存储，可选） |
 
@@ -36,12 +37,15 @@
 - `GET /health` — 返回 `wxAppIdConfigured`、`wxSecretConfigured` 是否为 true  
 - `GET /api/debug/wechat` — 实际请求 `api.weixin.qq.com` 校验 AppID/Secret（发布后在浏览器或 curl 测）
 
-若报「无法连接微信接口」：
+若报「无法连接微信接口」或 **`DEPTH_ZERO_SELF_SIGNED_CERT` / self-signed certificate**：
 
-1. 环境变量名必须是 **`WX_SECRET`**（你写的 `WX_SECERT` 少字母，代码已兼容但仍建议在控制台改对）  
-2. 重新**构建并发布**镜像（`Dockerfile` 已安装 `ca-certificates`，否则 Alpine 访问 HTTPS 会 `fetch failed`）  
-3. 云托管 → 服务 → **外网访问** 已开启  
-4. AppID/Secret 从 [微信公众平台](https://mp.weixin.qq.com/) → 开发 → 开发管理 → 开发设置 复制，勿用公众号密钥
+1. 环境变量名必须是 **`WX_SECRET`**（不是 `WX_SECERT`）  
+2. **云托管已开「开放接口服务」**：在环境变量增加 **`WX_API_USE_HTTP=1`**，重新发布（官方说明：容器内走 HTTP 至微信网关，避免 HTTPS 自签证书；请求不出容器，安全）  
+3. **未开开放接口服务**：重新构建镜像（`Dockerfile` 含 `ca-certificates`），或关闭开放接口服务后仅用 HTTPS  
+4. 云托管 → 服务 → **外网访问** 已开启  
+5. AppID/Secret 从 [微信公众平台](https://mp.weixin.qq.com/) → 开发 → 开发管理 → 开发设置 复制  
+
+发布后访问 `GET /health`，应看到 `wxApiOrigin: "http://api.weixin.qq.com"` 或 `https://...`；再测 `GET /api/debug/wechat`。
 
 ### 5. 发布
 

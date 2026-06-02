@@ -32,5 +32,8 @@
   "style": "v2",
   "sitemapLocation": "sitemap.json",
   "lazyCodeLoading": "requiredComponents",
-  "__usePrivacyCheck__": true
+  "__usePrivacyCheck__": true,
+  "requiredPrivateInfos": [
+    "getPhoneNumber"
+  ]
 }

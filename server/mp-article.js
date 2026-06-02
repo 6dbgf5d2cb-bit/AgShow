@@ -1,6 +1,8 @@
 /**
  * 将旅行记同步为关联公众号图文草稿（需配置 MP_APPID、MP_APP_SECRET）
  */
+const { weixinUrl, wxHttpRequest } = require('./wx-http')
+
 const MP_APPID = process.env.MP_APPID || ''
 const MP_SECRET = process.env.MP_APP_SECRET || process.env.MP_SECRET || ''
 const MINI_APPID = process.env.WX_APPID || ''
@@ -13,8 +15,10 @@ async function getMpAccessToken() {
     throw new Error('未配置公众号 MP_APPID / MP_APP_SECRET，无法同步到公众号')
   }
   if (mpToken && Date.now() < mpTokenExpireAt) return mpToken
-  const url = `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${MP_APPID}&secret=${MP_SECRET}`
-  const res = await fetch(url)
+  const url = weixinUrl(
+    `/cgi-bin/token?grant_type=client_credential&appid=${MP_APPID}&secret=${MP_SECRET}`
+  )
+  const res = await wxHttpRequest(url)
   const data = await res.json()
   if (!data.access_token) {
     throw new Error(data.errmsg || '获取公众号 access_token 失败')

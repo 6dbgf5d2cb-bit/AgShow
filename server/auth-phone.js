@@ -8,9 +8,9 @@
  *   DATA_DIR      用户数据目录，默认 ./data
  */
 const http = require('http')
-const https = require('https')
 const fs = require('fs')
 const path = require('path')
+const { getWeixinApiOrigin, useHttpForWeixinApi, weixinUrl, wxHttpRequest } = require('./wx-http')
 const { createTravelLogDraft, isMpShareConfigured } = require('./mp-article')
 const {
   handleSendResetCode,
@@ -44,95 +44,18 @@ function assertWxCredentials() {
   }
 }
 
-/** 使用 Node https 访问微信（比 fetch 在云托管/Alpine 上更稳定） */
-function wxHttpsRequest(url, options = {}) {
-  return new Promise((resolve, reject) => {
-    let parsed
-    try {
-      parsed = new URL(url)
-    } catch (e) {
-      reject(e)
-      return
-    }
-
-    const body = options.body ? String(options.body) : ''
-    const reqOpts = {
-      hostname: parsed.hostname,
-      port: 443,
-      path: parsed.pathname + parsed.search,
-      method: options.method || 'GET',
-      headers: {
-        ...(options.headers || {}),
-        ...(body ? { 'Content-Length': Buffer.byteLength(body) } : {})
-      },
-      timeout: 20000
-    }
-
-    const req = https.request(reqOpts, (res) => {
-      let raw = ''
-      res.on('data', (chunk) => {
-        raw += chunk
-      })
-      res.on('end', () => {
-        resolve({
-          status: res.statusCode || 0,
-          json: async () => {
-            try {
-              return raw ? JSON.parse(raw) : {}
-            } catch {
-              throw new Error(`微信接口返回非 JSON：${raw.slice(0, 200)}`)
-            }
-          },
-          text: async () => raw
-        })
-      })
-    })
-
-    req.on('error', (e) => {
-      const code = e.code || ''
-      if (code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' || code === 'CERT_HAS_EXPIRED') {
-        reject(
-          new Error(
-            'HTTPS 证书校验失败，请确认镜像已安装 ca-certificates（见 server/Dockerfile）并重新发布'
-          )
-        )
-        return
-      }
-      if (code === 'ENOTFOUND' || code === 'EAI_AGAIN') {
-        reject(new Error('无法解析 api.weixin.qq.com，请检查云托管 DNS/外网出网'))
-        return
-      }
-      if (code === 'ETIMEDOUT' || code === 'ECONNRESET') {
-        reject(new Error('连接微信接口超时，请确认已开通外网访问并重试'))
-        return
-      }
-      reject(
-        new Error(
-          `连接微信服务器失败(${code || 'unknown'})：${e.message || '网络错误'}。环境变量须为 WX_APPID 与 WX_SECRET（不是 WX_SECERT）`
-        )
-      )
-    })
-
-    req.on('timeout', () => {
-      req.destroy()
-      reject(new Error('连接微信接口超时(20s)'))
-    })
-
-    if (body) req.write(body)
-    req.end()
-  })
-}
-
 async function wxApiFetch(url, options) {
   assertWxCredentials()
-  return wxHttpsRequest(url, options)
+  return wxHttpRequest(url, options)
 }
 
 /** 启动/排查：探测能否访问微信 API */
 async function probeWechatApi() {
   assertWxCredentials()
-  const url = `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${APPID}&secret=${SECRET}`
-  const res = await wxHttpsRequest(url)
+  const url = weixinUrl(
+    `/cgi-bin/token?grant_type=client_credential&appid=${APPID}&secret=${SECRET}`
+  )
+  const res = await wxHttpRequest(url)
   const data = await res.json()
   if (data.access_token) {
     return { ok: true, message: '微信接口连通，AppID/Secret 有效' }
@@ -146,7 +69,9 @@ async function probeWechatApi() {
 
 async function getAccessToken() {
   if (accessToken && Date.now() < tokenExpireAt) return accessToken
-  const url = `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${APPID}&secret=${SECRET}`
+  const url = weixinUrl(
+    `/cgi-bin/token?grant_type=client_credential&appid=${APPID}&secret=${SECRET}`
+  )
   const res = await wxApiFetch(url)
   const data = await res.json()
   if (!data.access_token) {
@@ -159,7 +84,9 @@ async function getAccessToken() {
 
 async function code2Session(code) {
   if (!code) throw new Error('缺少微信登录 code')
-  const url = `https://api.weixin.qq.com/sns/jscode2session?appid=${APPID}&secret=${SECRET}&js_code=${code}&grant_type=authorization_code`
+  const url = weixinUrl(
+    `/sns/jscode2session?appid=${APPID}&secret=${SECRET}&js_code=${encodeURIComponent(code)}&grant_type=authorization_code`
+  )
   const res = await wxApiFetch(url)
   const data = await res.json()
   if (data.errcode) throw new Error(data.errmsg || 'code2Session 失败')
@@ -168,7 +95,7 @@ async function code2Session(code) {
 
 async function getPhoneByCode(phoneCode) {
   const token = await getAccessToken()
-  const url = `https://api.weixin.qq.com/wxa/business/getuserphonenumber?access_token=${token}`
+  const url = weixinUrl(`/wxa/business/getuserphonenumber?access_token=${token}`)
   const res = await wxApiFetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -328,7 +255,9 @@ const server = http.createServer(async (req, res) => {
         ok: true,
         service: 'agshow-api',
         wxAppIdConfigured: !!APPID,
-        wxSecretConfigured: !!SECRET
+        wxSecretConfigured: !!SECRET,
+        wxApiOrigin: getWeixinApiOrigin(),
+        wxApiUseHttp: useHttpForWeixinApi()
       })
       return
     }
@@ -349,6 +278,7 @@ const server = http.createServer(async (req, res) => {
           ...result,
           wxAppIdConfigured: true,
           wxSecretConfigured: true,
+          wxApiOrigin: getWeixinApiOrigin(),
           appIdPreview: APPID.slice(0, 6) + '***'
         })
       } catch (e) {
@@ -531,6 +461,7 @@ if (!APPID || !SECRET) {
 } else {
   console.log(`[agshow-api] WX_APPID=${APPID.slice(0, 6)}*** WX_SECRET=已配置`)
 }
+console.log(`[agshow-api] 微信 API：${getWeixinApiOrigin()}（自签证书时可设 WX_API_USE_HTTP=1）`)
 
 server.listen(PORT, HOST, () => {
   console.log(`[agshow-api] listening http://${HOST}:${PORT}`)

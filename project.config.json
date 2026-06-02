@@ -3,6 +3,7 @@
   "miniprogramRoot": "miniprogram/",
   "compileType": "miniprogram",
   "setting": {
+    "preloadBackgroundData": false,
     "useCompilerPlugins": [
       "typescript",
       "sass"

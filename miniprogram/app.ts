@@ -7,10 +7,13 @@ import {
 } from './utils/user'
 import { getRequiredCloudEnvId, isCloudRunEnabled } from './utils/cloud-request'
 import { syncAllFromCloud } from './utils/cloud-sync'
+import { initPrivacyAuthorization, logPrivacySettingOnLaunch } from './utils/privacy'
 
 App<IAppOption>({
   globalData: {},
   onLaunch() {
+    initPrivacyAuthorization()
+    logPrivacySettingOnLaunch()
     if (isCloudRunEnabled() && wx.cloud) {
       try {
         const envId = getRequiredCloudEnvId()
