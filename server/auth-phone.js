@@ -8,6 +8,7 @@
  *   DATA_DIR      用户数据目录，默认 ./data
  */
 const http = require('http')
+const https = require('https')
 const fs = require('fs')
 const path = require('path')
 const { createTravelLogDraft, isMpShareConfigured } = require('./mp-article')
@@ -19,8 +20,14 @@ const {
 const { mergeUserUpsert, mergeContentUpsert } = require('./admin-merge')
 const { getSystemConfig, saveSystemConfig } = require('./system-config')
 
-const APPID = process.env.WX_APPID || ''
-const SECRET = process.env.WX_SECRET || ''
+/** 兼容常见拼写错误 WX_SECERT */
+const APPID = (process.env.WX_APPID || process.env.WX_APP_ID || '').trim()
+const SECRET = (
+  process.env.WX_SECRET ||
+  process.env.WX_SECERT ||
+  process.env.WX_APP_SECRET ||
+  ''
+).trim()
 const PORT = Number(process.env.PORT || 80)
 const HOST = process.env.HOST || '0.0.0.0'
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data')
@@ -37,18 +44,103 @@ function assertWxCredentials() {
   }
 }
 
+/** 使用 Node https 访问微信（比 fetch 在云托管/Alpine 上更稳定） */
+function wxHttpsRequest(url, options = {}) {
+  return new Promise((resolve, reject) => {
+    let parsed
+    try {
+      parsed = new URL(url)
+    } catch (e) {
+      reject(e)
+      return
+    }
+
+    const body = options.body ? String(options.body) : ''
+    const reqOpts = {
+      hostname: parsed.hostname,
+      port: 443,
+      path: parsed.pathname + parsed.search,
+      method: options.method || 'GET',
+      headers: {
+        ...(options.headers || {}),
+        ...(body ? { 'Content-Length': Buffer.byteLength(body) } : {})
+      },
+      timeout: 20000
+    }
+
+    const req = https.request(reqOpts, (res) => {
+      let raw = ''
+      res.on('data', (chunk) => {
+        raw += chunk
+      })
+      res.on('end', () => {
+        resolve({
+          status: res.statusCode || 0,
+          json: async () => {
+            try {
+              return raw ? JSON.parse(raw) : {}
+            } catch {
+              throw new Error(`微信接口返回非 JSON：${raw.slice(0, 200)}`)
+            }
+          },
+          text: async () => raw
+        })
+      })
+    })
+
+    req.on('error', (e) => {
+      const code = e.code || ''
+      if (code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' || code === 'CERT_HAS_EXPIRED') {
+        reject(
+          new Error(
+            'HTTPS 证书校验失败，请确认镜像已安装 ca-certificates（见 server/Dockerfile）并重新发布'
+          )
+        )
+        return
+      }
+      if (code === 'ENOTFOUND' || code === 'EAI_AGAIN') {
+        reject(new Error('无法解析 api.weixin.qq.com，请检查云托管 DNS/外网出网'))
+        return
+      }
+      if (code === 'ETIMEDOUT' || code === 'ECONNRESET') {
+        reject(new Error('连接微信接口超时，请确认已开通外网访问并重试'))
+        return
+      }
+      reject(
+        new Error(
+          `连接微信服务器失败(${code || 'unknown'})：${e.message || '网络错误'}。环境变量须为 WX_APPID 与 WX_SECRET（不是 WX_SECERT）`
+        )
+      )
+    })
+
+    req.on('timeout', () => {
+      req.destroy()
+      reject(new Error('连接微信接口超时(20s)'))
+    })
+
+    if (body) req.write(body)
+    req.end()
+  })
+}
+
 async function wxApiFetch(url, options) {
   assertWxCredentials()
-  try {
-    return await fetch(url, options)
-  } catch (e) {
-    const hint = e && e.message ? String(e.message) : '网络错误'
-    if (hint.indexOf('fetch failed') !== -1) {
-      throw new Error(
-        '无法连接微信接口，请检查云托管是否开通外网访问，以及 WX_APPID、WX_SECRET 是否正确'
-      )
-    }
-    throw new Error(`连接微信服务器失败：${hint}`)
+  return wxHttpsRequest(url, options)
+}
+
+/** 启动/排查：探测能否访问微信 API */
+async function probeWechatApi() {
+  assertWxCredentials()
+  const url = `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${APPID}&secret=${SECRET}`
+  const res = await wxHttpsRequest(url)
+  const data = await res.json()
+  if (data.access_token) {
+    return { ok: true, message: '微信接口连通，AppID/Secret 有效' }
+  }
+  return {
+    ok: false,
+    message: data.errmsg || '微信返回错误',
+    errcode: data.errcode
   }
 }
 
@@ -232,7 +324,41 @@ const server = http.createServer(async (req, res) => {
 
   try {
     if (pathname === '/' || pathname === '/health') {
-      send(res, 200, { ok: true, service: 'agshow-api' })
+      send(res, 200, {
+        ok: true,
+        service: 'agshow-api',
+        wxAppIdConfigured: !!APPID,
+        wxSecretConfigured: !!SECRET
+      })
+      return
+    }
+
+    if (pathname === '/api/debug/wechat' && req.method === 'GET') {
+      if (!APPID || !SECRET) {
+        send(res, 200, {
+          ok: false,
+          wxAppIdConfigured: !!APPID,
+          wxSecretConfigured: !!SECRET,
+          hint: '请配置环境变量 WX_APPID、WX_SECRET（注意 Secret 拼写，不是 WX_SECERT）'
+        })
+        return
+      }
+      try {
+        const result = await probeWechatApi()
+        send(res, 200, {
+          ...result,
+          wxAppIdConfigured: true,
+          wxSecretConfigured: true,
+          appIdPreview: APPID.slice(0, 6) + '***'
+        })
+      } catch (e) {
+        send(res, 200, {
+          ok: false,
+          wxAppIdConfigured: true,
+          wxSecretConfigured: true,
+          message: e.message || '探测失败'
+        })
+      }
       return
     }
 
@@ -400,12 +526,16 @@ const server = http.createServer(async (req, res) => {
 })
 
 if (!APPID || !SECRET) {
-  console.warn('[agshow-api] 请配置环境变量 WX_APPID、WX_SECRET')
+  console.warn('[agshow-api] 未检测到 WX_APPID / WX_SECRET，微信登录将失败')
+  console.warn('[agshow-api] 变量名必须是 WX_SECRET，常见误写：WX_SECERT')
+} else {
+  console.log(`[agshow-api] WX_APPID=${APPID.slice(0, 6)}*** WX_SECRET=已配置`)
 }
 
 server.listen(PORT, HOST, () => {
   console.log(`[agshow-api] listening http://${HOST}:${PORT}`)
   console.log('  GET  /health')
+  console.log('  GET  /api/debug/wechat  （检测能否连上微信 API）')
   console.log('  POST /auth/wechat')
   console.log('  POST /auth/phone')
   console.log('  POST /api/auth/send-reset-code')

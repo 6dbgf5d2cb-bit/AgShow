@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>微信登录检测工具</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+        .status {
+            margin: 20px 0;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            background: #07c160;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            margin-top: 16px;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:active {
+            background: #06ad56;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            overflow-x: auto;
+            text-align: left;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .note {
+            font-size: 12px;
+            color: #666;
+            margin-top: 16px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h2>?? 微信登录检测</h2>
+    <div id="statusArea" class="status info">
+        ? 正在检测微信环境...
+    </div>
+    <div id="detailArea"></div>
+    <button id="triggerLoginBtn">?? 触发微信登录授权</button>
+    <div class="note">
+        ?? 注意：<br>
+        1. 本工具需要配置<strong>正确的微信公众号AppID</strong>和<strong>授权回调域名</strong>。<br>
+        2. 纯前端无法直接获取“登录态”，这里通过OAuth2.0授权流程判断用户是否愿意授权。<br>
+        3. 测试前请确保已在微信开发者工具或真实微信中打开此页面。
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ==================== 配置部分 ====================
+        // 请替换为你自己的微信公众号AppID（测试号也可以）
+        const APP_ID = 'wx6e12d40b1d257ae7';   // ?? 重要：替换为真实AppID
+        
+        // 授权后回调的页面地址（当前页面完整URL，需要经过公众号后台配置）
+        // 注意：回调域名必须与当前页面域名一致，并且在公众号后台 JS接口安全域名 / 网页授权域名 中添加
+        const REDIRECT_URI = encodeURIComponent(window.location.href.split('#')[0]); // 去除hash部分
+        
+        // OAuth2.0静默授权(snsapi_base) 或 非静默授权(snsapi_userinfo)
+        const SCOPE = 'snsapi_base';   // snsapi_base 静默授权（不弹窗，只获取openid）；snsapi_userinfo 会弹授权框
+        
+        // 微信OAuth授权URL模板
+        const OAUTH_URL = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${APP_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${SCOPE}&state=WX_LOGIN_TEST#wechat_redirect`;
+        // ==================== 配置结束 ====================
+        
+        const statusDiv = document.getElementById('statusArea');
+        const detailDiv = document.getElementById('detailArea');
+        const loginBtn = document.getElementById('triggerLoginBtn');
+        
+        // 显示状态消息
+        function showStatus(type, message, detail = '') {
+            statusDiv.className = `status ${type}`;
+            statusDiv.innerHTML = message;
+            if (detail) {
+                detailDiv.innerHTML = `<pre>${escapeHtml(detail)}</pre>`;
+            } else {
+                detailDiv.innerHTML = '';
+            }
+        }
+        
+        // 简单的防XSS
+        function escapeHtml(str) {
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+                return c;
+            });
+        }
+        
+        // 获取URL参数
+        function getQueryParam(name) {
+            const reg = new RegExp('(^|&)' + name + '=([^&]*)(&|$)');
+            const r = window.location.search.substr(1).match(reg);
+            if (r != null) return decodeURIComponent(r[2]);
+            return null;
+        }
+        
+        // 检测是否在微信内置浏览器中
+        function isWechatBrowser() {
+            const ua = navigator.userAgent.toLowerCase();
+            return ua.includes('micromessenger');
+        }
+        
+        // 核心：测试微信登录（通过获取code来判断授权步骤是否成功）
+        function testWechatLogin() {
+            // 1. 检查是否微信浏览器
+            if (!isWechatBrowser()) {
+                showStatus('error', '? 非微信浏览器环境', '当前 UserAgent 不包含 MicroMessenger，无法进行微信登录测试。');
+                loginBtn.disabled = true;
+                loginBtn.style.opacity = '0.6';
+                return false;
+            }
+            
+            // 2. 检查AppID是否配置
+            if (APP_ID === 'YOUR_APP_ID') {
+                showStatus('error', '?? 未配置AppID', '请将代码中的 APP_ID 替换为你真实的微信公众号AppID（测试号也可用）。');
+                loginBtn.disabled = true;
+                loginBtn.style.opacity = '0.6';
+                return false;
+            }
+            
+            // 3. 尝试获取URL中的code参数（说明已经授权回调）
+            const code = getQueryParam('code');
+            const state = getQueryParam('state');
+            
+            if (code) {
+                // 获取到了code，代表微信授权成功，也就是“登录”的第一步成功（获取临时凭证）
+                let detailMsg = `? 获取到授权码(code): ${code}\n`;
+                detailMsg += `?? 状态参数(state): ${state || '无'}\n\n`;
+                detailMsg += `?? 下一步：后端需使用此code + appid + secret 去微信接口换取 access_token 和 openid，才算完成登录。\n`;
+                detailMsg += `?? 接口: https://api.weixin.qq.com/sns/oauth2/access_token?appid=APPID&secret=SECRET&code=${code}&grant_type=authorization_code\n`;
+                detailMsg += `? 当前测试结论：微信授权调用成功，用户已同意/自动完成了授权流程。`;
+                showStatus('success', '?? 微信授权成功（已获取code）', detailMsg);
+                return true;
+            } else {
+                // 没有code参数，说明尚未授权，需要引导用户点击按钮去授权
+                showStatus('info', '?? 尚未进行微信授权，请点击下方按钮触发登录流程', '当前URL中没有code参数。点击“触发微信登录授权”按钮后，会跳转到微信授权页，同意后即返回此页并携带code。');
+                loginBtn.disabled = false;
+                return false;
+            }
+        }
+        
+        // 发起微信登录授权（跳转）
+        function startWechatAuth() {
+            if (!isWechatBrowser()) {
+                alert('请在微信内置浏览器中打开此页面进行测试');
+                return;
+            }
+            if (APP_ID === 'YOUR_APP_ID') {
+                alert('请先配置真实的微信公众号 AppID');
+                return;
+            }
+            // 跳转到微信授权页面
+            window.location.href = OAUTH_URL;
+        }
+        
+        // 初始化
+        function init() {
+            testWechatLogin();
+            loginBtn.addEventListener('click', startWechatAuth);
+        }
+        
+        init();
+    })();
+</script>
+</body>
+</html>

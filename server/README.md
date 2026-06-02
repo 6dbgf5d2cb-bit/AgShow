@@ -24,17 +24,24 @@
 
 | 变量 | 说明 |
 |------|------|
-| `WX_APPID` | 小程序 AppID |
-| `WX_SECRET` | 小程序 AppSecret |
+| `WX_APPID` | 小程序 AppID（须与当前小程序一致） |
+| `WX_SECRET` | 小程序 AppSecret（**不是** `WX_SECERT`，拼写错会导致读不到） |
 | `PORT` | `80`（默认已设） |
 | `DATA_DIR` | `/app/data`（用户 JSON 存储，可选） |
 
 云托管绑定小程序后，部分账号可自动注入 AppID/Secret，请以控制台为准。
 
-### 4. 健康检查
+### 4. 健康检查与微信连通性
 
-- 路径：`/health` 或 `/`  
-- 期望返回：`{"ok":true,"service":"agshow-api"}`
+- `GET /health` — 返回 `wxAppIdConfigured`、`wxSecretConfigured` 是否为 true  
+- `GET /api/debug/wechat` — 实际请求 `api.weixin.qq.com` 校验 AppID/Secret（发布后在浏览器或 curl 测）
+
+若报「无法连接微信接口」：
+
+1. 环境变量名必须是 **`WX_SECRET`**（你写的 `WX_SECERT` 少字母，代码已兼容但仍建议在控制台改对）  
+2. 重新**构建并发布**镜像（`Dockerfile` 已安装 `ca-certificates`，否则 Alpine 访问 HTTPS 会 `fetch failed`）  
+3. 云托管 → 服务 → **外网访问** 已开启  
+4. AppID/Secret 从 [微信公众平台](https://mp.weixin.qq.com/) → 开发 → 开发管理 → 开发设置 复制，勿用公众号密钥
 
 ### 5. 发布
 

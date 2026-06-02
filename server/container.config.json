@@ -9,7 +9,5 @@
   "envParams": {},
   "customLogs": "stdout",
   "dataBaseName": "",
-  "WX_APPID": "wx6e12d40b1d257ae7",
-  "WX_SECRET": "8cbd2198f19e22d7245992d832c714ee",
   "executeSQLs": []
 }
