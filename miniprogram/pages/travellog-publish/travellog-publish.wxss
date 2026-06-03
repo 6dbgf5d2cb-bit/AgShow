@@ -9,7 +9,7 @@
 
 .content {
   padding-top: 100rpx;
-  padding-bottom: 40rpx;
+  padding-bottom: calc(100rpx + env(safe-area-inset-bottom) + 160rpx);
   height: 100vh;
 }
 
@@ -134,14 +134,18 @@
   height: 140rpx;
 }
 
+/* 发布按钮：导航栏上方抬高约一行（48rpx） */
 .bottom-action-bar {
   position: fixed;
-  bottom: 60rpx;
   left: 0;
   right: 0;
+  bottom: calc(100rpx + env(safe-area-inset-bottom) + 48rpx) !important;
+  z-index: 9998;
   padding: 20rpx 40rpx;
   display: flex;
   justify-content: center;
+  background: #fff;
+  box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.06);
 }
 
 .publish-btn {

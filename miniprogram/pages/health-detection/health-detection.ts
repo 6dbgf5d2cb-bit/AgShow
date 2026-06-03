@@ -1,4 +1,3 @@
-import { getCurrentSession } from '../../utils/user'
 import {
   generateBaZi,
   analyzeSymptoms,
@@ -8,6 +7,12 @@ import {
   TimeSlot,
   SymptomItem
 } from '../../utils/health'
+import {
+  getHealthUsageStats,
+  incrementTcmUsage,
+  incrementBaziUsage,
+  saveHealthSharePayloadAsync
+} from '../../utils/health-usage'
 
 interface BaziForm {
   name: string
@@ -22,6 +27,8 @@ Page({
   data: {
     activeTab: 'symptom' as 'bazi' | 'symptom',
     pageTitle: '中医诊断',
+    tcmUsageCount: 0,
+    baziUsageCount: 0,
     baziForm: {
       name: '',
       gender: '',
@@ -46,6 +53,19 @@ Page({
       pageTitle: tab === 'bazi' ? '四柱八字' : '中医诊断',
       timeSlots: slots,
       currentSymptoms: SYMPTOMS.filter((s) => s.category === 'head')
+    })
+    this.refreshUsageStats()
+  },
+
+  onShow() {
+    this.refreshUsageStats()
+  },
+
+  refreshUsageStats() {
+    const stats = getHealthUsageStats()
+    this.setData({
+      tcmUsageCount: stats.tcm,
+      baziUsageCount: stats.bazi
     })
   },
 
@@ -158,11 +178,16 @@ Page({
       )
       
       wx.hideLoading()
-      
-      const storageKey = `bazi_result_${Date.now()}`
-      wx.setStorageSync(storageKey, result)
+
+      incrementBaziUsage()
+      this.refreshUsageStats()
+      const shareId = await saveHealthSharePayloadAsync(
+        'bazi',
+        result,
+        `${baziForm.name.trim()}的八字排盘`
+      )
       wx.navigateTo({
-        url: `/pages/health-result/health-result?type=bazi&key=${storageKey}`
+        url: `/pages/health-result/health-result?type=bazi&shareId=${encodeURIComponent(shareId)}`
       })
     } catch (error: any) {
       wx.hideLoading()
@@ -198,7 +223,7 @@ Page({
     })
   },
 
-  submitSymptom() {
+  async submitSymptom() {
     const { selectedSymptoms } = this.data
 
     if (selectedSymptoms.length === 0) {
@@ -211,10 +236,14 @@ Page({
     try {
       const result = analyzeSymptoms(selectedSymptoms)
       wx.hideLoading()
-      const storageKey = `symptom_result_${Date.now()}`
-      wx.setStorageSync(storageKey, result)
+      incrementTcmUsage()
+      this.refreshUsageStats()
+      const title = result.patternSummary
+        ? `中医诊断 · ${result.patternSummary.slice(0, 24)}`
+        : '中医诊断结果'
+      const shareId = await saveHealthSharePayloadAsync('symptom', result, title)
       wx.navigateTo({
-        url: `/pages/health-result/health-result?type=symptom&key=${storageKey}`
+        url: `/pages/health-result/health-result?type=symptom&shareId=${encodeURIComponent(shareId)}`
       })
     } catch (error: any) {
       wx.hideLoading()

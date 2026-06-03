@@ -1,5 +1,8 @@
 {
-  "usingComponents": {},
+  "usingComponents": {
+    "page-header": "/components/page-header/page-header",
+    "app-tab-bar": "/components/app-tab-bar/app-tab-bar"
+  },
   "navigationBarTitleText": "检测结果",
   "navigationStyle": "custom"
 }

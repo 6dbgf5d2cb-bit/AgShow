@@ -4,6 +4,11 @@
   <page-header theme="light" title="{{pageTitle}}" />
 
   <view class="main-content">
+    <view class="usage-banner">
+      <text wx:if="{{activeTab === 'bazi'}}" class="usage-text">八字排盘本机累计 {{baziUsageCount}} 次</text>
+      <text wx:else class="usage-text">中医诊断本机累计 {{tcmUsageCount}} 次</text>
+    </view>
+
     <view wx:if="{{activeTab === 'bazi'}}" class="form-section">
       <view class="section-title">
         <text class="icon">🔮</text>

@@ -614,10 +614,9 @@
     <view class="footer-space"></view>
   </scroll-view>
 
-  <view class="bottom-action">
-    <button class="btn-primary" bindtap="goBack">
-      <text>返回</text>
-    </button>
+  <view class="bottom-action" wx:if="{{loaded}}">
+    <button class="btn-share" open-type="share">分享给好友</button>
+    <button class="btn-primary" bindtap="goBack">返回</button>
   </view>
 
   <view class="tab-spacer"></view>

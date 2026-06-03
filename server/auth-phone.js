@@ -19,6 +19,7 @@ const {
 } = require('./password-reset')
 const { mergeUserUpsert, mergeContentUpsert } = require('./admin-merge')
 const { getSystemConfig, saveSystemConfig } = require('./system-config')
+const { createHealthShare, getHealthShare } = require('./health-share')
 
 /** 兼容常见拼写错误 WX_SECERT */
 const APPID = (process.env.WX_APPID || process.env.WX_APP_ID || '').trim()
@@ -445,6 +446,23 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname === '/api/travel/mp-config' && req.method === 'GET') {
       send(res, 200, { shareToMpEnabled: isMpShareConfigured() })
+      return
+    }
+
+    if (pathname === '/api/health/share' && req.method === 'POST') {
+      const created = createHealthShare(body)
+      send(res, 200, created)
+      return
+    }
+
+    if (pathname === '/api/health/share' && req.method === 'GET') {
+      const shareId = getQuery(req).id || getQuery(req).shareId || ''
+      const record = getHealthShare(shareId)
+      if (!record) {
+        send(res, 404, { message: '分享已过期或不存在' })
+        return
+      }
+      send(res, 200, { shareId, ...record })
       return
     }
 

@@ -40,6 +40,7 @@ page {
 
 .form-scroll {
   flex: 1;
+  padding-bottom: calc(100rpx + env(safe-area-inset-bottom) + 160rpx);
 }
 
 .form-section {
@@ -287,17 +288,43 @@ page {
   color: #ff4d4f;
 }
 
-.btn-primary {
+.bottom-spacing {
+  height: 32rpx;
+}
+
+/* 发布按钮：导航栏上方抬高约一行（48rpx） */
+.bottom-action-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(100rpx + env(safe-area-inset-bottom) + 48rpx) !important;
+  z-index: 9998;
+  padding: 20rpx 32rpx;
+  display: flex;
+  justify-content: center;
+  background: #fff;
+  box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.06);
+}
+
+.publish-btn {
   width: 100%;
+  max-width: 640rpx;
   height: 96rpx;
-  background: #667eea;
+  line-height: 96rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 48rpx;
   border: none;
   font-size: 32rpx;
   font-weight: bold;
   color: #fff;
+  margin: 0;
+  padding: 0;
 }
 
-.btn-primary[disabled] {
+.publish-btn::after {
+  border: none;
+}
+
+.publish-btn[disabled] {
   opacity: 0.6;
 }

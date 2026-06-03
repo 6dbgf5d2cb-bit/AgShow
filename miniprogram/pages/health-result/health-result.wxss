@@ -455,29 +455,56 @@
 }
 
 .footer-space {
-  height: 120rpx;
+  height: calc(180rpx + env(safe-area-inset-bottom));
 }
 
 .bottom-action {
   position: fixed;
-  bottom: 0;
   left: 0;
   right: 0;
-  padding: 24rpx 32rpx;
-  padding-bottom: calc(env(safe-area-inset-bottom) + 24rpx);
+  bottom: calc(100rpx + env(safe-area-inset-bottom) + 16rpx) !important;
+  z-index: 9998;
+  padding: 16rpx 32rpx;
   background: #fff;
   box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.05);
+  display: flex;
+  gap: 20rpx;
+  align-items: center;
+}
+
+.btn-share {
+  flex: 1;
+  height: 88rpx;
+  line-height: 88rpx;
+  background: #fff;
+  border: 2rpx solid #667eea;
+  border-radius: 44rpx;
+  font-size: 30rpx;
+  color: #667eea;
+  margin: 0;
+  padding: 0;
+}
+
+.btn-share::after {
+  border: none;
 }
 
 .btn-primary {
-  width: 100%;
+  flex: 1;
   height: 88rpx;
+  line-height: 88rpx;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 44rpx;
   border: none;
-  font-size: 32rpx;
+  font-size: 30rpx;
   font-weight: bold;
   color: #fff;
+  margin: 0;
+  padding: 0;
+}
+
+.btn-primary::after {
+  border: none;
 }
 
 /* 渊海子平诗诀样式 */
