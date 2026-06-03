@@ -63,6 +63,7 @@ page {
 
 .detail-scroll {
   flex: 1;
+  padding-bottom: calc(100rpx + env(safe-area-inset-bottom) + 160rpx);
 }
 
 .cover-section {
@@ -425,13 +426,14 @@ page {
   color: #667eea;
 }
 
+/* 报名栏：导航栏上方抬高约一行（48rpx） */
 .bottom-action {
   position: fixed;
-  bottom: 0;
   left: 0;
   right: 0;
+  bottom: calc(100rpx + env(safe-area-inset-bottom) + 48rpx) !important;
+  z-index: 9998;
   padding: 24rpx 32rpx;
-  padding-bottom: calc(env(safe-area-inset-bottom) + 24rpx);
   background: #fff;
   box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.05);
   display: flex;
