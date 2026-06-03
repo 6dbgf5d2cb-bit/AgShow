@@ -41,7 +41,7 @@ page {
 .module-scroll {
   flex: 1;
   padding: 24rpx;
-  padding-bottom: calc(24rpx + 100rpx + env(safe-area-inset-bottom) + 200rpx);
+  padding-bottom: calc(24rpx + 100rpx + env(safe-area-inset-bottom) + 152rpx);
 }
 
 .module-card {
@@ -167,12 +167,12 @@ page {
   left: 30rpx;
 }
 
-/* 保存按钮：导航栏上方再抬高约两行（80rpx） */
+/* 保存按钮：导航栏上方抬高约一行（32rpx） */
 .footer-bar {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: calc(100rpx + env(safe-area-inset-bottom) + 80rpx) !important;
+  bottom: calc(100rpx + env(safe-area-inset-bottom) + 32rpx) !important;
   z-index: 9998;
   padding: 24rpx 32rpx;
   background: #fff;
