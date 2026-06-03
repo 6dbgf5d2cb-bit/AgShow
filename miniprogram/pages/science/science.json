@@ -1,7 +1,7 @@
 {
   "usingComponents": {
+    "page-header": "/components/page-header/page-header",
     "app-tab-bar": "/components/app-tab-bar/app-tab-bar"
   },
-  "navigationBarTitleText": "健康检测",
   "navigationStyle": "custom"
 }

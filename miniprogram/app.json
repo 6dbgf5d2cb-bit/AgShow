@@ -1,5 +1,10 @@
 {
   "pages": [
+    "pages/index/index",
+    "pages/science/science",
+    "pages/ziwei/ziwei",
+    "pages/liuyao/liuyao",
+    "pages/fengshui/fengshui",
     "pages/login/login",
     "pages/register/register",
     "pages/forgot-password/forgot-password",
@@ -32,8 +37,5 @@
   "style": "v2",
   "sitemapLocation": "sitemap.json",
   "lazyCodeLoading": "requiredComponents",
-  "__usePrivacyCheck__": true,
-  "requiredPrivateInfos": [
-    "getPhoneNumber"
-  ]
+  "__usePrivacyCheck__": true
 }

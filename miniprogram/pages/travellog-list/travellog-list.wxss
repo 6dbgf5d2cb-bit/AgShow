@@ -279,6 +279,10 @@
   height: 160rpx;
 }
 
+.tab-spacer {
+  height: calc(120rpx + env(safe-area-inset-bottom));
+}
+
 .bottom-action-bar {
   position: fixed;
   bottom: 60rpx;

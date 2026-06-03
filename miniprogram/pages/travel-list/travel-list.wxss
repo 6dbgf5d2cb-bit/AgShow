@@ -158,6 +158,10 @@ page {
   color: #ccc;
 }
 
+.tab-spacer {
+  height: calc(120rpx + env(safe-area-inset-bottom));
+}
+
 .bottom-publish-btn {
   position: fixed;
   bottom: calc(env(safe-area-inset-bottom) + 32rpx);

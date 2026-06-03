@@ -1,4 +1,7 @@
 {
   "navigationBarTitleText": "旅行记",
-  "navigationStyle": "custom"
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "app-tab-bar": "/components/app-tab-bar/app-tab-bar"
+  }
 }

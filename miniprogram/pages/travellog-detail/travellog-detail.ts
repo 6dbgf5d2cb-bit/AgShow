@@ -9,7 +9,6 @@ import {
   requireModulePermission,
   userHasAdminRole,
   checkModulePermission,
-  guardModulePermission
 } from '../../utils/user'
 import {
   fetchMpShareConfig,
@@ -90,14 +89,6 @@ Page({
 
   async loadLog() {
     const session = getCurrentSession()
-    if (!session?.userId) {
-      wx.showToast({ title: '请先登录', icon: 'none' })
-      setTimeout(() => wx.navigateBack(), 1500)
-      return
-    }
-    if (!guardModulePermission(session.userId, 'travellog', 'view')) {
-      return
-    }
 
     try {
       await pullRemoteLogsAndMerge()
@@ -118,20 +109,22 @@ Page({
 
     const publisherInfo = getPublisherInfo(log.publisherId)
 
-    const canView = this.canViewPhone(session.userId)
+    const userId = session?.userId || ''
+    const canView = userId ? this.canViewPhone(userId) : false
 
-    const currentUser = getUserById(session.userId)
+    const currentUser = userId ? getUserById(userId) : null
     const isPublisher = currentUser ? log.publisherId === currentUser.userId : false
-    const isAdmin = userHasAdminRole(session.userId)
-    const canEdit = canManageContent(session.userId, 'travellog', 'edit', isPublisher)
-    const canDelete = canManageContent(session.userId, 'travellog', 'delete', isPublisher)
-    const canModerate =
-      canManageContent(session.userId, 'travellog', 'edit', isPublisher) ||
-      checkModulePermission(session.userId, 'travellog', 'delete')
+    const isAdmin = userId ? userHasAdminRole(userId) : false
+    const canEdit = userId ? canManageContent(userId, 'travellog', 'edit', isPublisher) : false
+    const canDelete = userId ? canManageContent(userId, 'travellog', 'delete', isPublisher) : false
+    const canModerate = userId
+      ? canManageContent(userId, 'travellog', 'edit', isPublisher) ||
+        checkModulePermission(userId, 'travellog', 'delete')
+      : false
 
     const likesKey = `travel_log_likes_${this.data.logId}`
     const likes = wx.getStorageSync(likesKey) || []
-    const liked = session ? likes.includes(session.userId) : false
+    const liked = userId ? likes.includes(userId) : false
 
     const mediaUrls = [...(log.images || []), ...(log.videos || [])].filter((u): u is string => !!u)
     const resolved = await resolveMediaUrlMap(mediaUrls)
@@ -153,7 +146,7 @@ Page({
       canEdit,
       canDelete,
       canModerate,
-      hasSession: true,
+      hasSession: !!session,
       comments: log.comments,
       allowComments: log.allowComments,
       liked,

@@ -1965,6 +1965,26 @@ export function saveHomePageConfigsToStorage(configs: HomePageConfig[]): void {
 }
 
 const ADMIN_CONFIG_LOCAL_REV_KEY = 'admin_system_config_local_rev'
+const FEATURED_TRAVELOG_KEY = 'home_featured_travellog_id'
+
+export function getFeaturedTravellogId(): string {
+  try {
+    return String(wx.getStorageSync(FEATURED_TRAVELOG_KEY) || '').trim()
+  } catch {
+    return ''
+  }
+}
+
+export function saveFeaturedTravellogId(logId: string): void {
+  wx.setStorageSync(FEATURED_TRAVELOG_KEY, logId || '')
+}
+
+/** 内容浏览类模块：未登录也可查看（管理后台除外） */
+export const PUBLIC_BROWSE_MODULES = ['travel', 'travellog', 'health'] as const
+
+export function isPublicBrowseModule(moduleId: string): boolean {
+  return (PUBLIC_BROWSE_MODULES as readonly string[]).includes(moduleId)
+}
 
 function buildAdminSystemConfigPayload(): AdminSystemConfigPayload {
   const roleConfig = getStoredRoleConfig()
@@ -1977,7 +1997,8 @@ function buildAdminSystemConfigPayload(): AdminSystemConfigPayload {
     roleConfig: customRoleConfig,
     rolePermissions: getStoredRolePermissions(),
     moduleConfigs: getStoredModuleConfigs(),
-    homePageConfigs: getStoredHomePageConfigs()
+    homePageConfigs: getStoredHomePageConfigs(),
+    featuredTravellogId: getFeaturedTravellogId()
   }
 }
 
@@ -2000,6 +2021,9 @@ function applyAdminSystemConfigFromRemote(config: AdminSystemConfigPayload): voi
   if (Array.isArray(config.homePageConfigs)) {
     saveHomePageConfigs(config.homePageConfigs as HomePageConfig[])
     HomePageConfigs.splice(0, HomePageConfigs.length, ...getStoredHomePageConfigs())
+  }
+  if (typeof config.featuredTravellogId === 'string') {
+    saveFeaturedTravellogId(config.featuredTravellogId)
   }
   if (remoteRev) {
     wx.setStorageSync(ADMIN_CONFIG_LOCAL_REV_KEY, remoteRev)
@@ -2148,7 +2172,7 @@ export function guardModulePermission(
     if (pages.length > 1) {
       wx.navigateBack()
     } else {
-      wx.redirectTo({ url: '/pages/member/member' })
+      wx.reLaunch({ url: '/pages/index/index' })
     }
   }, 1600)
   return false

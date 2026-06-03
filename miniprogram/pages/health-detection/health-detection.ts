@@ -1,4 +1,4 @@
-import { getCurrentSession, guardModulePermission } from '../../utils/user'
+import { getCurrentSession } from '../../utils/user'
 import {
   generateBaZi,
   analyzeSymptoms,
@@ -37,13 +37,11 @@ Page({
     currentSymptoms: [] as SymptomItem[]
   },
 
-  onLoad() {
-    const session = getCurrentSession()
-    if (!session?.userId || !guardModulePermission(session.userId, 'health', 'view')) {
-      return
-    }
+  onLoad(options: { tab?: string }) {
+    const tab = options?.tab === 'bazi' ? 'bazi' : 'symptom'
     const slots = getTimeSlots()
     this.setData({
+      activeTab: tab,
       timeSlots: slots,
       currentSymptoms: SYMPTOMS.filter(s => s.category === 'head')
     })

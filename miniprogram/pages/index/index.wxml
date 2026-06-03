@@ -1,0 +1,93 @@
+<view class="page">
+  <view class="status-bar-placeholder"></view>
+
+  <view class="user-card" bindtap="onHeaderTap">
+    <image class="avatar" src="{{avatarUrl}}" mode="aspectFill" wx:if="{{isLoggedIn && avatarUrl}}" />
+    <view class="avatar placeholder" wx:else>
+      <text>{{displayName}}</text>
+    </view>
+    <view class="user-meta">
+      <text class="user-name">{{displayName}}</text>
+      <text class="user-hint">{{statusHint}}</text>
+    </view>
+    <text class="arrow">›</text>
+  </view>
+
+  <view class="section">
+    <text class="section-title">快捷功能</text>
+    <view class="featured-card" bindtap="onFeaturedTap">
+      <view wx:if="{{featuredEmpty}}" class="featured-empty">
+        <text class="featured-label">精选旅行记</text>
+        <text class="featured-tip">管理员可在「首页配置」设置展示文章</text>
+      </view>
+      <view wx:else class="featured-body">
+        <text class="featured-tag">精选旅行记</text>
+        <text class="featured-title">{{featuredLog.title}}</text>
+        <text class="featured-excerpt">{{featuredExcerpt}}</text>
+      </view>
+    </view>
+    <view class="quick-row">
+      <view class="quick-card" bindtap="goTravel">
+        <view class="quick-icon blue">🚗</view>
+        <text class="quick-title">自驾收藏</text>
+        <text class="quick-sub">路线规划</text>
+      </view>
+      <view class="quick-card" bindtap="goTravellog">
+        <view class="quick-icon blue">🌬️</view>
+        <text class="quick-title">我的游记</text>
+        <text class="quick-sub">分享旅程</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="section">
+    <text class="section-title">健康档案</text>
+    <view class="link-card" bindtap="goHealth">
+      <view class="link-icon">📈</view>
+      <view class="link-body">
+        <text class="link-title">监测中心</text>
+        <text class="link-desc">中医诊断 · 查看健康分析</text>
+      </view>
+      <text class="arrow">›</text>
+    </view>
+  </view>
+
+  <view class="section">
+    <text class="section-title">科学尽头</text>
+    <view class="link-card" bindtap="goScienceItem" data-type="bazi">
+      <view class="link-icon blue-soft">📖</view>
+      <view class="link-body">
+        <text class="link-title">四柱八字</text>
+        <text class="link-desc">根据生辰八字推算人生运势、性格特征与命理分析</text>
+      </view>
+      <text class="arrow">›</text>
+    </view>
+    <view class="link-card" bindtap="goScienceItem" data-type="ziwei">
+      <view class="link-icon blue-soft">🧭</view>
+      <view class="link-body">
+        <text class="link-title">紫微斗数</text>
+        <text class="link-desc">紫微十二宫位排盘，揭示人生轨迹与发展方向</text>
+      </view>
+      <text class="arrow">›</text>
+    </view>
+    <view class="link-card" bindtap="goScienceItem" data-type="liuyao">
+      <view class="link-icon blue-soft">🪙</view>
+      <view class="link-body">
+        <text class="link-title">六爻金钱课</text>
+        <text class="link-desc">传统六爻起卦，预测吉凶与决策指引</text>
+      </view>
+      <text class="arrow">›</text>
+    </view>
+    <view class="link-card" bindtap="goScience">
+      <view class="link-icon blue-soft">🏔️</view>
+      <view class="link-body">
+        <text class="link-title">更多 · 科学尽头</text>
+        <text class="link-desc">风水堪舆等</text>
+      </view>
+      <text class="arrow">›</text>
+    </view>
+  </view>
+
+  <view class="tab-spacer"></view>
+  <app-tab-bar active="" />
+</view>

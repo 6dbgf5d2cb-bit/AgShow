@@ -1,0 +1,29 @@
+.placeholder-page {
+  min-height: 100vh;
+  background: #f5f6f8;
+}
+
+.body {
+  padding: 80rpx 48rpx;
+  text-align: center;
+}
+
+.icon {
+  font-size: 80rpx;
+  display: block;
+}
+
+.title {
+  display: block;
+  margin-top: 32rpx;
+  font-size: 36rpx;
+  font-weight: 600;
+}
+
+.desc {
+  display: block;
+  margin-top: 20rpx;
+  font-size: 28rpx;
+  color: #888;
+  line-height: 1.5;
+}

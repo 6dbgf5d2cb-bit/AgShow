@@ -81,4 +81,6 @@
     </button>
     <text wx:else-if="!canPublish && hasSession" class="publish-tip">{{publishMessage}}</text>
   </view>
+  <view class="tab-spacer"></view>
+  <app-tab-bar active="travellog" />
 </view>

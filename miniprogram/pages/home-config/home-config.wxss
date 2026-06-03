@@ -38,6 +38,26 @@ page {
   width: 64rpx;
 }
 
+.featured-picker {
+  margin: 0 32rpx 24rpx;
+  padding: 24rpx;
+  background: #fff;
+  border-radius: 12rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 28rpx;
+}
+
+.featured-picker .muted {
+  color: #999;
+}
+
+.picker-arrow {
+  color: #999;
+  font-size: 24rpx;
+}
+
 .config-section {
   padding: 24rpx 32rpx;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

@@ -10,6 +10,8 @@ export interface AdminSystemConfigPayload {
   rolePermissions?: Record<string, Record<string, Record<string, boolean>>>
   moduleConfigs?: unknown[]
   homePageConfigs?: unknown[]
+  /** 首页快捷区展示的旅行记 ID */
+  featuredTravellogId?: string
 }
 
 export async function fetchAdminSystemConfig(): Promise<AdminSystemConfigPayload> {

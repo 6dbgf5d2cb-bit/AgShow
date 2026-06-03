@@ -48,9 +48,93 @@
   opacity: 0.8;
 }
 
+.guest-actions {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 24rpx;
+}
+
+.btn-login,
+.btn-register {
+  flex: 1;
+  height: 72rpx;
+  line-height: 72rpx;
+  font-size: 28rpx;
+  border-radius: 36rpx;
+}
+
+.btn-login {
+  background: #fff;
+  color: #667eea;
+}
+
+.btn-register {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+  border: 2rpx solid rgba(255, 255, 255, 0.6);
+}
+
+.guest .arrow {
+  font-size: 40rpx;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.home-link {
+  font-size: 28rpx;
+  color: #1677ff;
+  padding: 0 16rpx;
+}
+
+.admin-list {
+  background: #fff;
+  border-radius: 16rpx;
+  overflow: hidden;
+}
+
+.admin-row {
+  display: flex;
+  align-items: center;
+  padding: 28rpx 24rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.admin-row:last-child {
+  border-bottom: none;
+}
+
+.admin-row-icon {
+  font-size: 40rpx;
+}
+
+.admin-row-body {
+  flex: 1;
+  margin: 0 20rpx;
+}
+
+.admin-row-title {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.admin-row-desc {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 24rpx;
+  color: #999;
+}
+
+.admin-quick {
+  margin-top: 20rpx;
+}
+
+.tab-spacer {
+  height: calc(120rpx + env(safe-area-inset-bottom));
+}
+
 .footer-section {
   padding: 24rpx;
-  padding-bottom: calc(env(safe-area-inset-bottom) + 48rpx);
+  padding-bottom: 24rpx;
 }
 
 .logout-btn {

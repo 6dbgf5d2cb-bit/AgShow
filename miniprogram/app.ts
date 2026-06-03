@@ -36,12 +36,6 @@ App<IAppOption>({
     void syncCurrentUserFromRemote()
     void syncAllFromCloud()
 
-    const session = getCurrentSession()
-    if (session) {
-      wx.redirectTo({
-        url: '/pages/member/member'
-      })
-    }
   },
   onShow() {
     void syncCurrentUserFromRemote()
@@ -51,7 +45,7 @@ App<IAppOption>({
     const currentPage = pages[pages.length - 1]
 
     if (session && currentPage && currentPage.route === 'pages/login/login') {
-      wx.redirectTo({
+      wx.reLaunch({
         url: '/pages/member/member'
       })
     }

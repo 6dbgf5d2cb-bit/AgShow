@@ -1,3 +1,8 @@
 {
-  "navigationBarTitleText": "会员中心"
+  "navigationBarTitleText": "我的",
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "page-header": "/components/page-header/page-header",
+    "app-tab-bar": "/components/app-tab-bar/app-tab-bar"
+  }
 }

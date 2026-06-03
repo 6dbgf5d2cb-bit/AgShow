@@ -43,26 +43,6 @@ Page({
   },
 
   checkPermissionAndLoad() {
-    const session = getCurrentSession()
-    if (!session) {
-      wx.showToast({
-        title: '请先登录',
-        icon: 'none'
-      })
-      setTimeout(() => wx.navigateBack(), 1500)
-      return
-    }
-
-    const hasPermission = checkModulePermission(session.userId, 'travel', 'view')
-    if (!hasPermission) {
-      wx.showToast({
-        title: '您没有权限访问此功能',
-        icon: 'none'
-      })
-      setTimeout(() => wx.navigateBack(), 1500)
-      return
-    }
-
     this.loadRouteDetail()
   },
 

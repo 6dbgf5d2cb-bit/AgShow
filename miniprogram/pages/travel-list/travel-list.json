@@ -1,4 +1,7 @@
 {
   "navigationBarTitleText": "自驾游线路",
-  "navigationStyle": "custom"
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "app-tab-bar": "/components/app-tab-bar/app-tab-bar"
+  }
 }

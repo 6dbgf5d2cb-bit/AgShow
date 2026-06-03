@@ -109,14 +109,14 @@ Page({
     wx.hideLoading()
     wx.showToast({ title: '登录成功', icon: 'success', duration: 1500 })
     setTimeout(() => {
-      wx.redirectTo({ url: '/pages/member/member' })
+      wx.reLaunch({ url: '/pages/member/member' })
     }, 1500)
   },
 
   async onLoad() {
     const session = getCurrentSession()
     if (session) {
-      wx.redirectTo({ url: '/pages/member/member' })
+      wx.reLaunch({ url: '/pages/member/member' })
       return
     }
 

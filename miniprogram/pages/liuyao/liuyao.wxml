@@ -1,0 +1,8 @@
+<view class="placeholder-page">
+  <page-header theme="light" title="六爻金钱课" bind:back="goBack" />
+  <view class="body">
+    <text class="icon">🪙</text>
+    <text class="title">六爻金钱课</text>
+    <text class="desc">传统六爻起卦功能开发中，敬请期待。</text>
+  </view>
+</view>

@@ -2,7 +2,6 @@ import { getActiveLogs, pullRemoteLogsAndMerge, canPublishLog, deleteLog, Travel
 import { applyResolvedUrl, resolveMediaUrlMap } from '../../utils/cloud-storage'
 import {
   getCurrentSession,
-  guardModulePermission,
   checkModulePermission,
   canManageModule,
   requireModulePermission,
@@ -27,12 +26,18 @@ Page({
 
   onLoad() {
     const session = getCurrentSession()
-    if (!session?.userId || !guardModulePermission(session.userId, 'travellog', 'view')) {
-      return
-    }
-
     this.loadLogs()
-    this.refreshActionPermissions(session.userId)
+    if (session?.userId) {
+      this.refreshActionPermissions(session.userId)
+    } else {
+      this.setData({
+        hasSession: false,
+        canPublish: false,
+        canCreate: false,
+        canDelete: false,
+        isAdmin: false
+      })
+    }
   },
 
   refreshActionPermissions(userId: string) {

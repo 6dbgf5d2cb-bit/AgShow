@@ -1,8 +1,12 @@
 <view class="container">
-  <page-header theme="light" title="会员中心" />
+  <page-header theme="light" title="我的">
+    <view slot="right" class="home-link" bindtap="goHome">首页</view>
+  </page-header>
+
   <view class="header" style="background:{{headerBgColor}}">
-    <view class="user-card">
-      <image class="avatar" src="{{avatarUrl}}" mode="aspectFill" />
+    <view class="user-card" wx:if="{{isLoggedIn}}" bindtap="goLogin">
+      <image class="avatar" src="{{avatarUrl}}" mode="aspectFill" wx:if="{{avatarUrl}}" />
+      <view class="avatar placeholder" wx:else>👤</view>
       <view class="user-info">
         <view class="nickname-row">
           <text class="nickname">{{nickname}}</text>
@@ -14,16 +18,23 @@
       </view>
     </view>
 
-    <view class="points-card">
+    <view class="user-card guest" wx:else bindtap="goLogin">
+      <view class="avatar placeholder">未登录</view>
+      <view class="user-info">
+        <text class="nickname">未登录</text>
+        <text class="username">点击登录或注册</text>
+      </view>
+      <text class="arrow">›</text>
+    </view>
+
+    <view class="points-card" wx:if="{{isLoggedIn}}">
       <view class="points-info">
         <text class="points-value">{{points}}</text>
         <text class="points-label">积分</text>
       </view>
       <view class="divider"></view>
       <view class="status-info">
-        <text class="status-value" style="color:{{statusColor}}">
-          {{statusName}}
-        </text>
+        <text class="status-value" style="color:{{statusColor}}">{{statusName}}</text>
         <text class="status-label">状态</text>
       </view>
       <view class="divider"></view>
@@ -32,14 +43,20 @@
         <text class="role-label">角色</text>
       </view>
     </view>
+
+    <view class="guest-actions" wx:if="{{!isLoggedIn}}">
+      <button class="btn-login" bindtap="goLogin">登录</button>
+      <button class="btn-register" bindtap="goRegister">注册</button>
+    </view>
   </view>
 
-  <view class="menu-section">
+  <view class="menu-section" wx:if="{{isLoggedIn && menuItems.length}}">
+    <view class="section-title"><text>个人功能</text></view>
     <view class="menu-grid">
-      <view 
-        wx:for="{{menuItems}}" 
-        wx:key="id" 
-        class="menu-item" 
+      <view
+        wx:for="{{menuItems}}"
+        wx:key="id"
+        class="menu-item"
         bindtap="handleMenuClick"
         data-id="{{item.id}}"
       >
@@ -49,69 +66,47 @@
     </view>
   </view>
 
-  <view wx:if="{{isAdmin}}" class="admin-section">
-    <view class="section-title">
-      <text>管理功能</text>
+  <view wx:if="{{isLoggedIn && isAdmin}}" class="admin-section">
+    <view class="section-title"><text>管理后台</text></view>
+    <view class="admin-list">
+      <view
+        wx:for="{{adminMenuItems}}"
+        wx:key="id"
+        class="admin-row"
+        bindtap="onAdminItemTap"
+        data-url="{{item.url}}"
+      >
+        <text class="admin-row-icon">{{item.icon}}</text>
+        <view class="admin-row-body">
+          <text class="admin-row-title">{{item.name}}</text>
+          <text class="admin-row-desc">{{item.desc}}</text>
+        </view>
+        <text class="arrow">›</text>
+      </view>
     </view>
-    <view class="admin-grid">
+    <view class="admin-quick">
       <view class="admin-item" bindtap="addTestPoints">
         <view class="admin-icon">🎁</view>
         <text class="admin-text">添加积分(+100)</text>
       </view>
-      <view class="admin-item" bindtap="goToAdmin">
-        <view class="admin-icon">🔧</view>
-        <text class="admin-text">管理后台</text>
-      </view>
     </view>
   </view>
 
-  <view class="info-section">
-    <view class="section-title">
-      <text>账户信息</text>
-    </view>
+  <view class="info-section" wx:if="{{isLoggedIn}}">
+    <view class="section-title"><text>账户信息</text></view>
     <view class="info-list">
-      <view class="info-item">
-        <text class="info-label">用户ID</text>
-        <text class="info-value">{{userId}}</text>
-      </view>
-      <view class="info-item">
-        <text class="info-label">手机号</text>
-        <text class="info-value">{{phone}}</text>
-      </view>
-      <view class="info-item">
-        <text class="info-label">邮箱</text>
-        <text class="info-value">{{email}}</text>
-      </view>
-      <view class="info-item">
-        <text class="info-label">注册时间</text>
-        <text class="info-value">{{registerTime}}</text>
-      </view>
-      <view class="info-item">
-        <text class="info-label">上次登录</text>
-        <text class="info-value">{{lastLoginTime}}</text>
-      </view>
-      <view class="info-item">
-        <text class="info-label">登录IP</text>
-        <text class="info-value">{{lastLoginIp}}</text>
-      </view>
+      <view class="info-item"><text class="info-label">用户ID</text><text class="info-value">{{userId}}</text></view>
+      <view class="info-item"><text class="info-label">手机号</text><text class="info-value">{{phone}}</text></view>
+      <view class="info-item"><text class="info-label">邮箱</text><text class="info-value">{{email}}</text></view>
+      <view class="info-item"><text class="info-label">注册时间</text><text class="info-value">{{registerTime}}</text></view>
+      <view class="info-item"><text class="info-label">上次登录</text><text class="info-value">{{lastLoginTime}}</text></view>
     </view>
   </view>
 
-  <view class="privileges-section">
-    <view class="section-title">
-      <text>会员特权</text>
-    </view>
-    <view class="privileges-list">
-      <view wx:for="{{privileges}}" wx:key="index" class="privilege-item">
-        <text class="privilege-check">✓</text>
-        <text class="privilege-text">{{item}}</text>
-      </view>
-    </view>
-  </view>
-
-
-
-  <view class="footer-section">
+  <view class="footer-section" wx:if="{{isLoggedIn}}">
     <button class="logout-btn" bindtap="onLogout">退出登录</button>
   </view>
+
+  <view class="tab-spacer"></view>
+  <app-tab-bar active="member" />
 </view>

@@ -1,0 +1,8 @@
+<view class="placeholder-page">
+  <page-header theme="light" title="风水堪舆" bind:back="goBack" />
+  <view class="body">
+    <text class="icon">🏔️</text>
+    <text class="title">风水堪舆</text>
+    <text class="desc">宅向与环境气场分析功能开发中，敬请期待。</text>
+  </view>
+</view>

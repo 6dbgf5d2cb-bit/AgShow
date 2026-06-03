@@ -154,4 +154,6 @@
       </button>
     </view>
   </view>
+  <view class="tab-spacer"></view>
+  <app-tab-bar active="health" />
 </view>

@@ -4,6 +4,26 @@
 
   <view class="config-section">
     <view class="section-header">
+      <text class="section-title">首页精选旅行记</text>
+      <text class="section-hint">展示在首页「快捷功能」区</text>
+    </view>
+    <picker
+      mode="selector"
+      range="{{travellogOptions}}"
+      range-key="title"
+      value="{{featuredIndex}}"
+      bindchange="onFeaturedChange"
+    >
+      <view class="featured-picker">
+        <text wx:if="{{travellogOptions.length}}">{{travellogOptions[featuredIndex].title}}</text>
+        <text wx:else class="muted">暂无旅行记，请先发布</text>
+        <text class="picker-arrow">▼</text>
+      </view>
+    </picker>
+  </view>
+
+  <view class="config-section">
+    <view class="section-header">
       <text class="section-title">首页模块配置</text>
       <text class="section-hint">控制首页显示的模块及权限</text>
     </view>

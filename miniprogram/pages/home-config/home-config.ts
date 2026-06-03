@@ -5,14 +5,21 @@ import {
   HomePageConfig,
   saveHomePageConfigsToStorage,
   pullAdminSystemConfigAndApply,
+  persistAdminSystemConfigToCloud,
   getCurrentSession,
   guardModulePermission,
-  requireModulePermission
+  requireModulePermission,
+  getFeaturedTravellogId,
+  saveFeaturedTravellogId
 } from '../../utils/user'
+import { getActiveLogs, pullRemoteLogsAndMerge } from '../../utils/travellog'
 
 Page({
   data: {
-    configs: [] as HomePageConfig[]
+    configs: [] as HomePageConfig[],
+    featuredTravellogId: '',
+    travellogOptions: [] as { logId: string; title: string }[],
+    featuredIndex: 0
   },
 
   async onLoad() {
@@ -25,12 +32,37 @@ Page({
     } catch {
       // 离线时沿用本地
     }
+    try {
+      await pullRemoteLogsAndMerge()
+    } catch {
+      /* 离线 */
+    }
     this.loadConfigs()
   },
 
   loadConfigs() {
     const configs = JSON.parse(JSON.stringify(getHomePageConfigs()))
-    this.setData({ configs })
+    const logs = getActiveLogs()
+    const travellogOptions = logs.map((l) => ({ logId: l.logId, title: l.title || l.logId }))
+    const featuredTravellogId = getFeaturedTravellogId()
+    let featuredIndex = travellogOptions.findIndex((o) => o.logId === featuredTravellogId)
+    if (featuredIndex < 0) featuredIndex = 0
+    this.setData({
+      configs,
+      travellogOptions,
+      featuredTravellogId: travellogOptions[featuredIndex]?.logId || '',
+      featuredIndex
+    })
+  },
+
+  onFeaturedChange(e: WechatMiniprogram.PickerChange) {
+    const idx = Number(e.detail.value)
+    const opt = this.data.travellogOptions[idx]
+    if (!opt) return
+    this.setData({
+      featuredIndex: idx,
+      featuredTravellogId: opt.logId
+    })
   },
 
   getModuleName(moduleId: string): string {
@@ -90,7 +122,9 @@ Page({
     }
 
     saveHomePageConfigsToStorage(this.data.configs)
-    
+    saveFeaturedTravellogId(this.data.featuredTravellogId)
+    void persistAdminSystemConfigToCloud()
+
     wx.showToast({
       title: '首页配置已保存',
       icon: 'success',

@@ -67,4 +67,6 @@
   <view class="bottom-publish-btn" bindtap="goToPublish">
     <text>发布线路</text>
   </view>
+  <view class="tab-spacer"></view>
+  <app-tab-bar active="travel" />
 </view>
