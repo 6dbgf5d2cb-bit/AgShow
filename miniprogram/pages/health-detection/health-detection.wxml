@@ -1,28 +1,9 @@
 <wxs module="utils" src="./health-detection.wxs"></wxs>
 
 <view class="container">
-  <page-header theme="light" title="健康检测" />
+  <page-header theme="light" title="{{pageTitle}}" />
 
   <view class="main-content">
-    <view class="tab-bar">
-      <view 
-        class="tab-item {{activeTab === 'bazi' ? 'active' : ''}}" 
-        bindtap="switchTab" 
-        data-tab="bazi"
-      >
-        <text class="tab-icon">📿</text>
-        <text class="tab-text">八字排盘</text>
-      </view>
-      <view 
-        class="tab-item {{activeTab === 'symptom' ? 'active' : ''}}" 
-        bindtap="switchTab" 
-        data-tab="symptom"
-      >
-        <text class="tab-icon">🌿</text>
-        <text class="tab-text">中医诊断</text>
-      </view>
-    </view>
-
     <view wx:if="{{activeTab === 'bazi'}}" class="form-section">
       <view class="section-title">
         <text class="icon">🔮</text>

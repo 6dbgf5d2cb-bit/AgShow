@@ -20,7 +20,8 @@ interface BaziForm {
 
 Page({
   data: {
-    activeTab: 'bazi',
+    activeTab: 'symptom' as 'bazi' | 'symptom',
+    pageTitle: '中医诊断',
     baziForm: {
       name: '',
       gender: '',
@@ -38,12 +39,13 @@ Page({
   },
 
   onLoad(options: { tab?: string }) {
-    const tab = options?.tab === 'bazi' ? 'bazi' : 'symptom'
+    const tab: 'bazi' | 'symptom' = options?.tab === 'bazi' ? 'bazi' : 'symptom'
     const slots = getTimeSlots()
     this.setData({
       activeTab: tab,
+      pageTitle: tab === 'bazi' ? '四柱八字' : '中医诊断',
       timeSlots: slots,
-      currentSymptoms: SYMPTOMS.filter(s => s.category === 'head')
+      currentSymptoms: SYMPTOMS.filter((s) => s.category === 'head')
     })
   },
 
@@ -59,15 +61,6 @@ Page({
         ...baziForm,
         calendarType: value
       }
-    })
-  },
-
-  switchTab(e: any) {
-    console.log('switchTab called', e)
-    const tab = e.currentTarget.dataset.tab
-    console.log('switchTab tab:', tab)
-    this.setData({
-      activeTab: tab
     })
   },
 
