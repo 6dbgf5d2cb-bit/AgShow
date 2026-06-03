@@ -158,13 +158,8 @@ page {
   color: #ccc;
 }
 
-.tab-spacer {
-  height: calc(120rpx + env(safe-area-inset-bottom));
-}
-
 .bottom-publish-btn {
   position: fixed;
-  bottom: calc(env(safe-area-inset-bottom) + 32rpx);
   left: 50%;
   transform: translateX(-50%);
   padding: 24rpx 64rpx;

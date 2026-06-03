@@ -128,10 +128,6 @@
   margin-top: 20rpx;
 }
 
-.tab-spacer {
-  height: calc(120rpx + env(safe-area-inset-bottom));
-}
-
 .footer-section {
   padding: 24rpx;
   padding-bottom: 24rpx;

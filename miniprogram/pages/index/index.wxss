@@ -202,7 +202,3 @@
   color: #888;
   line-height: 1.45;
 }
-
-.tab-spacer {
-  height: calc(120rpx + env(safe-area-inset-bottom));
-}

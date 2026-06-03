@@ -9,6 +9,9 @@ page {
   --page-pad-right: 96rpx;
   /* 顶栏：状态栏 + 下移约两行，避免返回键与状态栏重叠 */
   --page-header-top: calc(env(safe-area-inset-top) + 88rpx);
+  /* 全局底部导航高度 */
+  --app-tab-bar-height: calc(100rpx + env(safe-area-inset-bottom));
+  --app-fixed-bottom: var(--app-tab-bar-height);
 }
 
 view,
@@ -19,9 +22,16 @@ button {
 }
 
 /* 页面根容器：左侧 32rpx，右侧 96rpx（向左收两列） */
-.container {
+.container,
+.page {
   padding-left: var(--page-pad-left);
   padding-right: var(--page-pad-right);
+}
+
+.container,
+.page {
+  /* 避免末尾按钮贴住底部导航 */
+  padding-bottom: calc(var(--app-tab-bar-height) + 16rpx);
 }
 
 /* 未使用 page-header 组件的旧顶栏 */
@@ -44,14 +54,53 @@ button {
 
 /* 为底部全局导航预留空间（所有页面请在根节点末追加 tab-spacer + app-tab-bar） */
 .tab-spacer {
-  height: calc(100rpx + env(safe-area-inset-bottom));
+  height: var(--app-tab-bar-height);
   flex-shrink: 0;
 }
 
-/* 页面内固定底栏上移，避免被全局底部导航遮挡 */
+/*
+ * 固定底栏：发布 / 保存 / 提交等，一律贴在导航栏上方
+ * z-index 低于 app-tab-bar(9999)，高于普通内容
+ */
 .bottom-action,
-.bottom-publish-btn,
 .bottom-action-bar,
-.footer-bar {
-  bottom: calc(100rpx + env(safe-area-inset-bottom)) !important;
+.bottom-bar,
+.footer-bar,
+.comment-input-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: var(--app-fixed-bottom) !important;
+  z-index: 9998;
+}
+
+/* 居中悬浮发布钮保留页面内 left/transform，仅抬高 bottom */
+.bottom-publish-btn {
+  bottom: var(--app-fixed-bottom) !important;
+  z-index: 9998;
+}
+
+/* 列表页底部留白（配合固定发布按钮） */
+.bottom-spacing,
+.footer-space {
+  height: calc(var(--app-tab-bar-height) + 120rpx);
+}
+
+/* 表单/配置类滚动区：避免末尾按钮被导航挡住 */
+.form-scroll,
+.config-scroll,
+.module-scroll,
+.permission-scroll,
+.content.content--with-fixed-header,
+.route-list,
+.log-list,
+.detail-scroll,
+.user-list,
+scroll-view.content {
+  padding-bottom: calc(var(--app-tab-bar-height) + 200rpx);
+}
+
+/* 主内容区末尾主按钮（非 fixed 的提交按钮） */
+.main-content {
+  padding-bottom: calc(var(--app-tab-bar-height) + 32rpx);
 }
