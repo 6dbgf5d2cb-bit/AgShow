@@ -41,3 +41,17 @@ button {
   font-size: 44rpx;
   color: #333;
 }
+
+/* 为底部全局导航预留空间（所有页面请在根节点末追加 tab-spacer + app-tab-bar） */
+.tab-spacer {
+  height: calc(100rpx + env(safe-area-inset-bottom));
+  flex-shrink: 0;
+}
+
+/* 页面内固定底栏上移，避免被全局底部导航遮挡 */
+.bottom-action,
+.bottom-publish-btn,
+.bottom-action-bar,
+.footer-bar {
+  bottom: calc(100rpx + env(safe-area-inset-bottom)) !important;
+}

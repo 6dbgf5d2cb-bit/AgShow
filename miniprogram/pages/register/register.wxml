@@ -1,4 +1,4 @@
-<view class="container">
+﻿<view class="container">
   <page-header bind:back="goToLogin" title="注册会员" />
 
   <scroll-view class="form-scroll" scroll-y>
@@ -170,4 +170,7 @@
       </view>
     </view>
   </scroll-view>
+
+  <view class="tab-spacer"></view>
+  <app-tab-bar />
 </view>

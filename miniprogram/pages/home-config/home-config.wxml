@@ -1,4 +1,4 @@
-<wxs module="utils" src="./home-config.wxs"></wxs>
+﻿<wxs module="utils" src="./home-config.wxs"></wxs>
 <view class="container">
   <page-header bind:back="goBack" title="首页配置管理" />
 
@@ -89,4 +89,7 @@
   <view class="footer-bar">
     <button class="btn-primary" bindtap="saveConfig">保存配置</button>
   </view>
+
+  <view class="tab-spacer"></view>
+  <app-tab-bar />
 </view>

@@ -1,4 +1,4 @@
-<view wx:if="{{log}}" class="container">
+﻿<view wx:if="{{log}}" class="container">
   <page-header bind:back="goBack" title="旅行记详情">
     <view slot="right" class="header-right">
       <view class="share-btn" bindtap="onShareMenu">
@@ -146,4 +146,7 @@
     <button wx:if="{{allowComments}}" class="send-btn" bindtap="submitComment">发送</button>
     <text wx:else class="comments-closed">评论已关闭</text>
   </view>
+
+  <view class="tab-spacer"></view>
+  <app-tab-bar />
 </view>

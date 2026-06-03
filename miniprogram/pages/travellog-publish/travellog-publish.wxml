@@ -1,4 +1,4 @@
-<view class="container">
+﻿<view class="container">
   <page-header fixed bind:back="goBack" title="{{isEdit ? '编辑旅行记' : '发布旅行记'}}" />
 
   <scroll-view scroll-y class="content content--with-fixed-header">
@@ -75,4 +75,7 @@
   <view class="bottom-action-bar">
     <button class="publish-btn" bindtap="onPublish" loading="{{loading}}">{{isEdit ? '保存' : '发布'}}</button>
   </view>
+
+  <view class="tab-spacer"></view>
+  <app-tab-bar />
 </view>

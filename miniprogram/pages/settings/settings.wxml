@@ -1,4 +1,4 @@
-<view class="container">
+﻿<view class="container">
   <page-header title="设置" />
 
   <view class="section">
@@ -121,4 +121,7 @@
       </view>
     </view>
   </view>
+
+  <view class="tab-spacer"></view>
+  <app-tab-bar />
 </view>

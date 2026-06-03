@@ -2,7 +2,7 @@
   <view
     wx:for="{{tabs}}"
     wx:key="key"
-    class="tab-item {{active === item.key ? 'active' : ''}}"
+    class="tab-item {{currentActive === item.key ? 'active' : ''}}"
     bindtap="onTabTap"
     data-url="{{item.url}}"
     data-key="{{item.key}}"

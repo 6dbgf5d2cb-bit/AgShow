@@ -1,4 +1,4 @@
-<wxs module="utils" src="./user-management.wxs"></wxs>
+﻿<wxs module="utils" src="./user-management.wxs"></wxs>
 <view class="container">
   <page-header bind:back="goBack">
     <view slot="title" class="user-mgmt-title-row">
@@ -300,4 +300,7 @@
       </view>
     </view>
   </view>
+
+  <view class="tab-spacer"></view>
+  <app-tab-bar />
 </view>

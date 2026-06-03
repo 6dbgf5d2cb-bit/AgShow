@@ -1,4 +1,4 @@
-<view class="container">
+﻿<view class="container">
   <page-header bind:back="goBack" title="{{isEdit ? '编辑线路' : '发布线路'}}" />
 
   <scroll-view class="form-scroll" scroll-y>
@@ -207,4 +207,7 @@
       </button>
     </view>
   </scroll-view>
+
+  <view class="tab-spacer"></view>
+  <app-tab-bar />
 </view>

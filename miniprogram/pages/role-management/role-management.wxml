@@ -1,4 +1,4 @@
-<wxs module="utils" src="./role-management.wxs"></wxs>
+﻿<wxs module="utils" src="./role-management.wxs"></wxs>
 <view class="container">
   <page-header bind:back="goBack">
     <view slot="title" class="role-header-center">
@@ -162,4 +162,7 @@
       </view>
     </view>
   </view>
+
+  <view class="tab-spacer"></view>
+  <app-tab-bar />
 </view>

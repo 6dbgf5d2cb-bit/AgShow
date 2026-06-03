@@ -1,4 +1,4 @@
-<view class="container">
+﻿<view class="container">
   <page-header bind:back="goBack" title="线路详情" />
 
   <scroll-view class="detail-scroll" scroll-y>
@@ -178,4 +178,7 @@
       <text>请登录后报名</text>
     </view>
   </view>
+
+  <view class="tab-spacer"></view>
+  <app-tab-bar />
 </view>

@@ -1,4 +1,4 @@
-<view class="container">
+﻿<view class="container">
   <page-header theme="light" title="管理后台">
     <view slot="right" class="admin-avatar">
       <text>👑</text>
@@ -123,14 +123,6 @@
 
   <view class="footer-space"></view>
 
-  <view class="bottom-bar">
-    <view class="nav-item active">
-      <text class="nav-icon">⚙️</text>
-      <text class="nav-text">管理后台</text>
-    </view>
-    <view class="nav-item" bindtap="goToMember">
-      <text class="nav-icon">👤</text>
-      <text class="nav-text">个人中心</text>
-    </view>
-  </view>
+  <view class="tab-spacer"></view>
+  <app-tab-bar />
 </view>
