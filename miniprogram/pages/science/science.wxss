@@ -50,3 +50,7 @@
   color: #ccc;
   font-size: 40rpx;
 }
+
+.tab-spacer {
+  height: calc(120rpx + env(safe-area-inset-bottom));
+}

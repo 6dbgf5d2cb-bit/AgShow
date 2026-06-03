@@ -83,6 +83,7 @@ page {
 .config-scroll {
   flex: 1;
   padding: 24rpx;
+  padding-bottom: calc(24rpx + 100rpx + env(safe-area-inset-bottom) + 200rpx);
 }
 
 .config-card {
@@ -180,7 +181,13 @@ page {
   color: #999;
 }
 
+/* 保存按钮：导航栏上方再抬高约两行（80rpx） */
 .footer-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(100rpx + env(safe-area-inset-bottom) + 80rpx) !important;
+  z-index: 9998;
   padding: 24rpx 32rpx;
   background: #fff;
   box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.06);

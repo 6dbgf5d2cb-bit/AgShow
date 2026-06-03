@@ -5,6 +5,7 @@ page {
 
 .container {
   min-height: 100vh;
+  padding-bottom: calc(100rpx + env(safe-area-inset-bottom) + 220rpx);
 }
 
 .role-header-center {
@@ -161,6 +162,7 @@ page {
 
 .permission-scroll {
   max-height: 600rpx;
+  padding-bottom: calc(100rpx + env(safe-area-inset-bottom) + 120rpx);
 }
 
 .module-card {
@@ -229,7 +231,13 @@ page {
   color: #666;
 }
 
+/* 保存按钮：导航栏上方再抬高约两行（80rpx） */
 .footer-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(100rpx + env(safe-area-inset-bottom) + 80rpx) !important;
+  z-index: 9998;
   padding: 24rpx 32rpx;
   background: #fff;
   box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.06);

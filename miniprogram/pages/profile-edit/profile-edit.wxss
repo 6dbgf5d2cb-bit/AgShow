@@ -171,7 +171,15 @@
   color: #ccc;
 }
 
+.bottom-spacing {
+  height: 120rpx;
+}
+
 .bottom-action-bar {
+  position: fixed;
+  bottom: 60rpx;
+  left: 0;
+  right: 0;
   padding: 20rpx 40rpx;
   display: flex;
   justify-content: center;

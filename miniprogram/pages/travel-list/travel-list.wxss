@@ -35,6 +35,7 @@ page {
 .route-list {
   flex: 1;
   padding: 24rpx;
+  padding-bottom: calc(24rpx + 100rpx + env(safe-area-inset-bottom) + 180rpx);
 }
 
 .route-card {
@@ -158,8 +159,10 @@ page {
   color: #ccc;
 }
 
+/* 在导航栏上方再抬高约两行（80rpx） */
 .bottom-publish-btn {
   position: fixed;
+  bottom: calc(100rpx + env(safe-area-inset-bottom) + 80rpx) !important;
   left: 50%;
   transform: translateX(-50%);
   padding: 24rpx 64rpx;

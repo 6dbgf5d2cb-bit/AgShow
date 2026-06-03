@@ -130,7 +130,15 @@
   transform: scale(0.8);
 }
 
+.bottom-spacing {
+  height: 140rpx;
+}
+
 .bottom-action-bar {
+  position: fixed;
+  bottom: 60rpx;
+  left: 0;
+  right: 0;
   padding: 20rpx 40rpx;
   display: flex;
   justify-content: center;

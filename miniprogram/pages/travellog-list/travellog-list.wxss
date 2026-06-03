@@ -103,6 +103,7 @@
 .log-list {
   flex: 1;
   padding: 16rpx;
+  padding-bottom: calc(16rpx + 100rpx + env(safe-area-inset-bottom) + 140rpx);
   height: calc(100vh - 300rpx);
 }
 
@@ -275,10 +276,20 @@
   margin-left: 8rpx;
 }
 
+.bottom-spacing {
+  height: 32rpx;
+}
+
+/* 在导航栏上方再抬高约一行（48rpx） */
 .bottom-action-bar {
+  position: fixed;
+  bottom: calc(100rpx + env(safe-area-inset-bottom) + 48rpx) !important;
+  left: 0;
+  right: 0;
   padding: 20rpx 40rpx;
   display: flex;
   justify-content: center;
+  z-index: 9998;
 }
 
 .publish-btn {

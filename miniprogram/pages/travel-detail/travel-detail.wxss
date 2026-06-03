@@ -426,7 +426,12 @@ page {
 }
 
 .bottom-action {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   padding: 24rpx 32rpx;
+  padding-bottom: calc(env(safe-area-inset-bottom) + 24rpx);
   background: #fff;
   box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.05);
   display: flex;
