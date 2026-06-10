@@ -47,7 +47,8 @@ function makeShareId(type) {
 }
 
 function createHealthShare(body) {
-  const type = body.type === 'symptom' ? 'symptom' : 'bazi'
+  const type =
+    body.type === 'symptom' ? 'symptom' : body.type === 'ziwei' ? 'ziwei' : 'bazi'
   if (!body.data || typeof body.data !== 'object') {
     throw new Error('缺少分享数据')
   }
@@ -56,7 +57,11 @@ function createHealthShare(body) {
   const shareId = makeShareId(type)
   const title =
     (body.title && String(body.title).trim()) ||
-    (type === 'bazi' ? '八字排盘结果' : '中医诊断结果')
+    (type === 'bazi'
+      ? '八字排盘结果'
+      : type === 'ziwei'
+        ? '紫微斗数结果'
+        : '中医诊断结果')
   map[shareId] = {
     type,
     title,

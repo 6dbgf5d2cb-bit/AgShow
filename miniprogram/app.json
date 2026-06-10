@@ -3,6 +3,7 @@
     "pages/index/index",
     "pages/science/science",
     "pages/ziwei/ziwei",
+    "pages/ziwei-result/ziwei-result",
     "pages/liuyao/liuyao",
     "pages/fengshui/fengshui",
     "pages/login/login",

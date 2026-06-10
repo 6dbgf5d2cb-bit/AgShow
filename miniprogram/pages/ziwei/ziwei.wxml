@@ -1,9 +1,94 @@
-﻿<view class="placeholder-page">
+﻿<view class="container">
   <page-header theme="light" title="紫微斗数" bind:back="goBack" />
-  <view class="body">
-    <text class="icon">🧭</text>
-    <text class="title">紫微斗数</text>
-    <text class="desc">十二宫位排盘功能开发中，敬请期待。</text>
+
+  <view class="main-content">
+    <view class="usage-banner">
+      <text class="usage-text">紫微斗数本机累计 {{ziweiUsageCount}} 次</text>
+    </view>
+
+    <view class="form-section">
+      <view class="section-title">
+        <text class="icon">🧭</text>
+        <text>紫微斗数排盘</text>
+      </view>
+      <text class="section-hint">依《紫微斗数全书》安星排盘，典籍合参《斗数宣微》《紫微斗数全集》《紫微斗数源流探微》</text>
+
+      <view class="form-group">
+        <text class="form-label required">姓名</text>
+        <input
+          class="form-input"
+          placeholder="请输入您的姓名"
+          value="{{form.name}}"
+          bindinput="onInputChange"
+          data-field="name"
+        />
+      </view>
+
+      <view class="form-group">
+        <text class="form-label required">性别</text>
+        <view class="gender-options">
+          <view
+            class="gender-option {{form.gender === 'male' ? 'active' : ''}}"
+            bindtap="selectGender"
+            data-value="male"
+          >
+            <text>男</text>
+          </view>
+          <view
+            class="gender-option {{form.gender === 'female' ? 'active' : ''}}"
+            bindtap="selectGender"
+            data-value="female"
+          >
+            <text>女</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="form-group">
+        <text class="form-label required">日期类型</text>
+        <view class="calendar-options">
+          <view
+            class="calendar-option {{form.calendarType === 'solar' ? 'active' : ''}}"
+            bindtap="selectCalendarType"
+            data-value="solar"
+          >
+            <text>公历</text>
+          </view>
+          <view
+            class="calendar-option {{form.calendarType === 'lunar' ? 'active' : ''}}"
+            bindtap="selectCalendarType"
+            data-value="lunar"
+          >
+            <text>农历</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="form-group">
+        <text class="form-label required">出生日期</text>
+        <picker mode="date" value="{{form.birthDate}}" bindchange="onBirthDateChange">
+          <view class="picker-input">
+            <text>{{form.birthDate || '请选择年月日'}}</text>
+            <text class="picker-arrow">›</text>
+          </view>
+        </picker>
+        <text class="date-hint">选公历将自动换算农历排盘；选农历则直接按农历安星</text>
+      </view>
+
+      <view class="form-group">
+        <text class="form-label required">出生时分</text>
+        <picker mode="time" value="{{form.birthTime}}" bindchange="onBirthTimeChange">
+          <view class="picker-input">
+            <text>{{form.birthTime || '请选择时、分'}}</text>
+            <text class="picker-arrow">›</text>
+          </view>
+        </picker>
+      </view>
+
+      <button class="btn-primary" bindtap="submitZiwei">
+        <text>开始排盘</text>
+      </button>
+    </view>
   </view>
 
   <view class="tab-spacer"></view>

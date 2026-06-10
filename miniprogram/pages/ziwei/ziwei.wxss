@@ -1,26 +1,179 @@
+.tab-spacer {
+  height: calc(120rpx + env(safe-area-inset-bottom));
+}
+
+.container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #4a6fa5 0%, #2c3e6b 100%);
+}
+
+.main-content {
+  background: #fff;
+  border-radius: 32rpx 32rpx 0 0;
+  min-height: calc(100vh - 140rpx);
+  padding: 32rpx;
+}
+
+.usage-banner {
+  margin: -8rpx 0 24rpx;
+  padding: 20rpx 24rpx;
+  background: linear-gradient(135deg, #eef3ff 0%, #e8f0fa 100%);
+  border-radius: 16rpx;
+}
+
+.usage-text {
+  font-size: 26rpx;
+  color: #555;
+}
+
+.form-section {
+  padding-bottom: 40rpx;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 16rpx;
+}
+
+.section-title .icon {
+  font-size: 36rpx;
+}
+
+.section-title text:last-child {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.section-hint {
+  display: block;
+  font-size: 24rpx;
+  color: #888;
+  line-height: 1.5;
+  margin-bottom: 32rpx;
+}
+
+.form-group {
+  margin-bottom: 32rpx;
+}
+
+.form-label {
+  display: block;
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 16rpx;
+}
+
+.form-label.required::after {
+  content: ' *';
+  color: #ff4d4f;
+}
+
+.form-input {
+  width: 100%;
+  height: 88rpx;
+  padding: 0 24rpx;
+  background: #f8f9fa;
+  border-radius: 12rpx;
+  font-size: 30rpx;
+  box-sizing: border-box;
+}
+
+.gender-options,
+.calendar-options {
+  display: flex;
+  gap: 24rpx;
+}
+
+.gender-option,
+.calendar-option {
+  flex: 1;
+  height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f9fa;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  color: #666;
+  border: 2rpx solid transparent;
+}
+
+.gender-option.active,
+.calendar-option.active {
+  background: #eef3ff;
+  color: #4a6fa5;
+  border-color: #4a6fa5;
+  font-weight: bold;
+}
+
+.picker-input {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 88rpx;
+  padding: 0 24rpx;
+  background: #f8f9fa;
+  border-radius: 12rpx;
+  font-size: 30rpx;
+  color: #333;
+}
+
+.picker-arrow {
+  color: #ccc;
+  font-size: 36rpx;
+}
+
+.date-hint {
+  display: block;
+  margin-top: 12rpx;
+  font-size: 22rpx;
+  color: #999;
+  line-height: 1.4;
+}
+
+.btn-primary {
+  margin-top: 16rpx;
+  height: 96rpx;
+  line-height: 96rpx;
+  background: linear-gradient(135deg, #4a6fa5 0%, #2c3e6b 100%);
+  color: #fff;
+  font-size: 32rpx;
+  font-weight: bold;
+  border-radius: 48rpx;
+  border: none;
+}
+
+.btn-primary::after {
+  border: none;
+}
+
+/* 占位页样式（六爻、风水等页面 @import 复用） */
 .placeholder-page {
   min-height: 100vh;
   background: #f5f6f8;
 }
 
-.body {
+.placeholder-page .body {
   padding: 80rpx 48rpx;
   text-align: center;
 }
 
-.icon {
+.placeholder-page .icon {
   font-size: 80rpx;
   display: block;
 }
 
-.title {
+.placeholder-page .title {
   display: block;
   margin-top: 32rpx;
   font-size: 36rpx;
   font-weight: 600;
 }
 
-.desc {
+.placeholder-page .desc {
   display: block;
   margin-top: 20rpx;
   font-size: 28rpx;

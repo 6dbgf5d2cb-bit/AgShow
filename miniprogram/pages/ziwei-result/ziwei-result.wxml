@@ -1,0 +1,214 @@
+<view class="container" wx:if="{{loaded}}">
+  <page-header theme="light" title="紫微斗数" bind:back="goBack" />
+
+  <view class="tab-bar">
+    <view class="tab-item {{activeTab === 'chart' ? 'active' : ''}}" bindtap="switchTab" data-tab="chart">命盘</view>
+    <view class="tab-item {{activeTab === 'classics' ? 'active' : ''}}" bindtap="switchTab" data-tab="classics">典籍详论</view>
+    <view class="tab-item {{activeTab === 'summary' ? 'active' : ''}}" bindtap="switchTab" data-tab="summary">综合摘要</view>
+  </view>
+
+  <scroll-view class="content" scroll-y>
+    <view wx:if="{{activeTab === 'chart'}}" class="result-section">
+      <view class="card date-card">
+        <view class="card-header">
+          <text class="card-title">📅 排盘信息</text>
+        </view>
+        <view class="info-list">
+          <view class="info-row">
+            <text class="info-label">姓名</text>
+            <text class="info-value">{{result.name}}（{{result.genderLabel}}）</text>
+          </view>
+          <view class="info-row">
+            <text class="info-label">输入历法</text>
+            <text class="info-value">{{result.originalCalendarType === 'lunar' ? '农历' : '公历'}}</text>
+          </view>
+          <view class="info-row">
+            <text class="info-label">输入日期</text>
+            <text class="info-value">{{result.originalDate}} {{result.originalTime}}</text>
+          </view>
+          <view class="info-row">
+            <text class="info-label">农历</text>
+            <text class="info-value">{{result.lunarDate}} {{result.timeZhi}}时</text>
+          </view>
+          <view class="info-row">
+            <text class="info-label">公历</text>
+            <text class="info-value">{{result.solarDate}} {{result.originalTime}}</text>
+          </view>
+          <view class="info-row">
+            <text class="info-label">时辰干支</text>
+            <text class="info-value">{{result.timeGanZhi}}</text>
+          </view>
+          <view class="info-row">
+            <text class="info-label">生年干支</text>
+            <text class="info-value">{{result.yearGan}}{{result.yearZhi}}</text>
+          </view>
+          <view class="info-row">
+            <text class="info-label">五行局</text>
+            <text class="info-value">{{result.fiveElementsClass}}</text>
+          </view>
+          <view class="info-row">
+            <text class="info-label">命宫 / 身宫</text>
+            <text class="info-value">{{result.soulPalaceName}} / {{result.bodyPalaceName}}</text>
+          </view>
+          <view class="info-row">
+            <text class="info-label">说明</text>
+            <text class="info-value info-block">{{result.chartNote}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view wx:if="{{result.patterns.length}}" class="card">
+        <view class="card-header">
+          <text class="card-title">✨ 格局</text>
+        </view>
+        <view class="pattern-list">
+          <view class="pattern-item" wx:for="{{result.patterns}}" wx:key="name">
+            <view class="pattern-head">
+              <text class="pattern-name">{{item.name}}</text>
+              <text class="pattern-type {{item.type === '凶格' ? 'bad' : 'good'}}">{{item.type}}</text>
+            </view>
+            <text class="pattern-desc">{{item.description}}</text>
+            <text class="pattern-source">{{item.source}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="card">
+        <view class="card-header">
+          <text class="card-title">🧭 十二宫命盘</text>
+        </view>
+        <view class="palace-list">
+          <view
+            class="palace-item {{item.isSoul ? 'soul' : ''}} {{item.isBody ? 'body' : ''}}"
+            wx:for="{{result.palaces}}"
+            wx:key="index"
+          >
+            <view class="palace-head">
+              <text class="palace-name">{{item.name}}</text>
+              <text class="palace-gz">{{item.ganZhi}}</text>
+              <text wx:if="{{item.isSoul}}" class="palace-tag soul-tag">命</text>
+              <text wx:if="{{item.isBody}}" class="palace-tag body-tag">身</text>
+            </view>
+            <view class="palace-stars" wx:if="{{item.starLines.length}}">
+              <text class="star-line" wx:for="{{item.starLines}}" wx:for-item="star" wx:key="*this">{{star}}</text>
+            </view>
+            <text wx:else class="palace-empty">无主星</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="card">
+        <view class="card-header">
+          <text class="card-title">⏳ 大限</text>
+        </view>
+        <view class="daxian-list">
+          <view class="daxian-item" wx:for="{{result.daXian}}" wx:key="ageRange">
+            <text class="daxian-age">{{item.ageRange}}岁</text>
+            <text class="daxian-palace">{{item.palaceName}}</text>
+            <text class="daxian-gz">{{item.ganZhi}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{activeTab === 'classics'}}" class="result-section">
+      <view class="card">
+        <view class="card-header">
+          <text class="card-title">📖 《紫微斗数全书》</text>
+        </view>
+        <view class="text-block">
+          <text class="block-title">命宫总论</text>
+          <text class="block-body">{{result.classics.quanShu.mingGongSummary}}</text>
+          <text class="block-title">主星性情</text>
+          <text class="block-body">{{result.classics.quanShu.starNature}}</text>
+          <text class="block-title">格局</text>
+          <text class="block-body">{{result.classics.quanShu.geJuSummary}}</text>
+        </view>
+        <view class="palace-brief-list">
+          <view class="palace-brief" wx:for="{{result.classics.quanShu.palaceBriefs}}" wx:key="palace">
+            <text class="brief-title">{{item.palace}}</text>
+            <text class="brief-body">{{item.text}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="card">
+        <view class="card-header">
+          <text class="card-title">📜 《斗数宣微》</text>
+        </view>
+        <view class="text-block">
+          <text class="block-title">三方四正</text>
+          <text class="block-body">{{result.classics.xuanWei.sanFang}}</text>
+          <text class="block-title">会照</text>
+          <text class="block-body">{{result.classics.xuanWei.huiZhao}}</text>
+          <text class="block-title">借星</text>
+          <text class="block-body">{{result.classics.xuanWei.borrowStar}}</text>
+        </view>
+      </view>
+
+      <view class="card">
+        <view class="card-header">
+          <text class="card-title">📚 《紫微斗数全集》</text>
+        </view>
+        <view class="text-block">
+          <text class="block-body">{{result.classics.quanJi.shenShaNote}}</text>
+        </view>
+        <view class="daxian-classic-list">
+          <view class="daxian-classic" wx:for="{{result.classics.quanJi.daXianItems}}" wx:key="ageRange">
+            <text class="dc-theme">{{item.theme}}</text>
+            <text class="dc-detail">{{item.detail}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="card">
+        <view class="card-header">
+          <text class="card-title">🔍 《紫微斗数源流探微》</text>
+        </view>
+        <view class="text-block">
+          <text class="block-title">流派说明</text>
+          <text class="block-body">{{result.classics.yuanLiu.schoolNote}}</text>
+          <text class="block-title">现代诠释</text>
+          <text class="block-body">{{result.classics.yuanLiu.modernRead}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{activeTab === 'summary'}}" class="result-section">
+      <view class="card summary-card">
+        <view class="card-header">
+          <text class="card-title">🎭 性格</text>
+        </view>
+        <text class="summary-text">{{result.classics.summary.character}}</text>
+      </view>
+      <view class="card summary-card">
+        <view class="card-header">
+          <text class="card-title">💼 事业</text>
+        </view>
+        <text class="summary-text">{{result.classics.summary.career}}</text>
+      </view>
+      <view class="card summary-card">
+        <view class="card-header">
+          <text class="card-title">💰 财运</text>
+        </view>
+        <text class="summary-text">{{result.classics.summary.wealth}}</text>
+      </view>
+      <view class="card summary-card">
+        <view class="card-header">
+          <text class="card-title">💑 婚姻</text>
+        </view>
+        <text class="summary-text">{{result.classics.summary.marriage}}</text>
+      </view>
+      <view class="card summary-card">
+        <view class="card-header">
+          <text class="card-title">🏥 健康</text>
+        </view>
+        <text class="summary-text">{{result.classics.summary.health}}</text>
+      </view>
+    </view>
+  </scroll-view>
+
+  <view class="share-hint">点击右上角分享给好友</view>
+  <view class="tab-spacer"></view>
+  <app-tab-bar />
+</view>

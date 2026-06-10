@@ -1,7 +1,8 @@
 /**
- * 中医诊断 / 八字排盘 使用次数统计与分享
+ * 中医诊断 / 八字排盘 / 紫微斗数 使用次数统计与分享
  */
 import type { BaZiResult, SymptomResult } from './health'
+import type { ZiweiResult } from './ziwei-engine'
 import { isRemoteApiEnabled, remoteRequest } from './cloud-request'
 
 const USAGE_KEY = 'health_usage_stats'
@@ -11,26 +12,27 @@ const MAX_SHARE_AGE_MS = 30 * 24 * 60 * 60 * 1000
 export interface HealthUsageStats {
   tcm: number
   bazi: number
+  ziwei: number
   updatedAt: number
 }
 
 export interface HealthShareRecord {
-  type: 'bazi' | 'symptom'
+  type: 'bazi' | 'symptom' | 'ziwei'
   title: string
   createdAt: number
-  data: BaZiResult | SymptomResult
+  data: BaZiResult | SymptomResult | ZiweiResult
 }
 
 function readStats(): HealthUsageStats {
   try {
     const raw = wx.getStorageSync(USAGE_KEY) as HealthUsageStats
     if (raw && typeof raw.tcm === 'number' && typeof raw.bazi === 'number') {
-      return raw
+      return { ...raw, ziwei: typeof raw.ziwei === 'number' ? raw.ziwei : 0 }
     }
   } catch {
     /* ignore */
   }
-  return { tcm: 0, bazi: 0, updatedAt: Date.now() }
+  return { tcm: 0, bazi: 0, ziwei: 0, updatedAt: Date.now() }
 }
 
 function writeStats(stats: HealthUsageStats): void {
@@ -56,14 +58,21 @@ export function incrementBaziUsage(): number {
   return stats.bazi
 }
 
-function makeShareId(type: 'bazi' | 'symptom'): string {
+export function incrementZiweiUsage(): number {
+  const stats = readStats()
+  stats.ziwei += 1
+  writeStats(stats)
+  return stats.ziwei
+}
+
+function makeShareId(type: 'bazi' | 'symptom' | 'ziwei'): string {
   return `${type}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
 }
 
 /** 保存可分享的结果，返回 shareId */
 export function saveHealthSharePayload(
-  type: 'bazi' | 'symptom',
-  data: BaZiResult | SymptomResult,
+  type: 'bazi' | 'symptom' | 'ziwei',
+  data: BaZiResult | SymptomResult | ZiweiResult,
   title?: string
 ): string {
   const shareId = makeShareId(type)
@@ -72,6 +81,9 @@ export function saveHealthSharePayload(
     if (type === 'bazi') {
       const b = data as BaZiResult
       shareTitle = `八字排盘 · ${b.originalDate || b.solarDate || '命理分析'}`
+    } else if (type === 'ziwei') {
+      const z = data as ZiweiResult
+      shareTitle = `紫微斗数 · ${z.name || z.lunarDate || '命盘分析'}`
     } else {
       const s = data as SymptomResult
       shareTitle = s.patternSummary
@@ -108,10 +120,14 @@ export function buildHealthSharePath(type: 'bazi' | 'symptom', shareId: string):
   return `/pages/health-result/health-result?type=${type}&shareId=${encodeURIComponent(shareId)}`
 }
 
+export function buildZiweiSharePath(shareId: string): string {
+  return `/pages/ziwei-result/ziwei-result?shareId=${encodeURIComponent(shareId)}`
+}
+
 /** 优先云端保存，便于好友打开；失败则仅存本机 */
 export async function saveHealthSharePayloadAsync(
-  type: 'bazi' | 'symptom',
-  data: BaZiResult | SymptomResult,
+  type: 'bazi' | 'symptom' | 'ziwei',
+  data: BaZiResult | SymptomResult | ZiweiResult,
   title?: string
 ): Promise<string> {
   const localId = saveHealthSharePayload(type, data, title)
