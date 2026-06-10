@@ -73,26 +73,50 @@
         </view>
       </view>
 
-      <view class="card">
+      <view class="card chart-card">
         <view class="card-header">
           <text class="card-title">🧭 十二宫命盘</text>
+          <text class="chart-subtitle">方盘布局 · 南向上 · 寅起左旋</text>
         </view>
-        <view class="palace-list">
-          <view
-            class="palace-item {{item.isSoul ? 'soul' : ''}} {{item.isBody ? 'body' : ''}}"
-            wx:for="{{result.palaces}}"
-            wx:key="index"
-          >
-            <view class="palace-head">
-              <text class="palace-name">{{item.name}}</text>
-              <text class="palace-gz">{{item.ganZhi}}</text>
-              <text wx:if="{{item.isSoul}}" class="palace-tag soul-tag">命</text>
-              <text wx:if="{{item.isBody}}" class="palace-tag body-tag">身</text>
+        <view class="chart-board">
+          <view class="chart-grid">
+            <view
+              class="chart-palace {{item.isSoul ? 'is-soul' : ''}} {{item.isBody ? 'is-body' : ''}}"
+              wx:for="{{chartPalaces}}"
+              wx:key="branch"
+              style="grid-row: {{item.gridRow}}; grid-column: {{item.gridCol}};"
+            >
+              <view class="cp-header">
+                <text class="cp-branch">{{item.branch}}</text>
+                <view class="cp-title-wrap">
+                  <text class="cp-name">{{item.name}}</text>
+                  <text wx:if="{{item.isSoul}}" class="cp-badge soul">命</text>
+                  <text wx:if="{{item.isBody}}" class="cp-badge body">身</text>
+                </view>
+                <text class="cp-gz">{{item.ganZhi}}</text>
+              </view>
+              <view class="cp-stars" wx:if="{{item.hasStars}}">
+                <view class="cp-major" wx:if="{{item.majorLabels.length}}">
+                  <text class="cp-star major" wx:for="{{item.majorLabels}}" wx:for-item="star" wx:key="*this">{{star}}</text>
+                </view>
+                <view class="cp-minor" wx:if="{{item.minorLabels.length}}">
+                  <text class="cp-star minor" wx:for="{{item.minorLabels}}" wx:for-item="star" wx:key="*this">{{star}}</text>
+                </view>
+              </view>
+              <text wx:else class="cp-empty">空宫</text>
             </view>
-            <view class="palace-stars" wx:if="{{item.starLines.length}}">
-              <text class="star-line" wx:for="{{item.starLines}}" wx:for-item="star" wx:key="*this">{{star}}</text>
+            <view class="chart-center">
+              <text class="cc-title">紫微斗数</text>
+              <text class="cc-name">{{result.name}}</text>
+              <text class="cc-line">{{result.genderLabel}} · {{result.fiveElementsClass}}</text>
+              <text class="cc-line">{{result.yearGan}}{{result.yearZhi}}年</text>
+              <text class="cc-line">{{result.lunarDate}}</text>
+              <text class="cc-line">{{result.timeGanZhi}}时</text>
+              <view class="cc-palaces">
+                <text>命宫 {{result.soulPalaceName}}</text>
+                <text>身宫 {{result.bodyPalaceName}}</text>
+              </view>
             </view>
-            <text wx:else class="palace-empty">无主星</text>
           </view>
         </view>
       </view>
